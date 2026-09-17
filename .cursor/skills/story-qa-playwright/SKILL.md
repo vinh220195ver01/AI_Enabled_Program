@@ -84,6 +84,7 @@ This skill **requires** a commit and PR (that is the deliverable).
 - Add a source comment above the relevant assertions that preserves the exact manual-case step/verification wording, without paraphrasing or rewording it. The comment should match the original step and expected result language precisely.
 - Put the step comment and the expected result comment in separate lines directly above the exact assertion code they describe. Do not combine them into a single line.
 - Use `await` for every asynchronous action that requires waiting on a locator, click, page navigation, reload, or visibility assertion.
+- Before creating the PR, pull the target branch into the QA branch (`git pull --no-edit origin develop`) and resolve any merge conflicts before pushing or opening the PR.
 - Push and open the PR with `gh`. Target the repo default branch.
 
 PR title: `test: cover <story> with Playwright`
