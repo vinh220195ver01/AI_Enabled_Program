@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "test": "playwright test",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "qa:tc": "node scripts/run-story-qa.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0"

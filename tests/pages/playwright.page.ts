@@ -15,6 +15,7 @@ export class PlaywrightPage {
   readonly assertionsHeading: Locator;
   readonly body: Locator;
   readonly themeToggle: Locator;
+  readonly githubRepositoryLink: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -52,6 +53,9 @@ export class PlaywrightPage {
     this.body = page.locator("body");
     this.themeToggle = page.getByRole("button", {
       name: /switch between dark and light mode/i,
+    });
+    this.githubRepositoryLink = page.getByRole("link", {
+      name: "GitHub repository",
     });
   }
 
@@ -91,5 +95,11 @@ export class PlaywrightPage {
 
   async reload(): Promise<void> {
     await this.page.reload();
+  }
+
+  async openGitHubRepository(): Promise<Page> {
+    const popupPromise = this.page.waitForEvent("popup");
+    await this.githubRepositoryLink.click();
+    return popupPromise;
   }
 }
