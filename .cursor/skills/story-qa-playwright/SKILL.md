@@ -1,6 +1,6 @@
 ---
 name: story-qa-playwright
-description: Script user-provided manual test cases into Playwright, run them locally, then open a GitHub pull request and wait until CI finishes. If the user only gives a story with no cases, design about 10 cases first. Use only when this skill is explicitly named or attached. Triggers include manual test cases, story QA, Playwright scripting, and a review-ready GitHub MR/PR.
+description: Script user-provided manual test cases into Playwright, run them locally, then open a GitHub pull request and wait until CI finishes. Use only when this skill is explicitly named or attached. Triggers include manual test cases, story QA, Playwright scripting, and a review-ready GitHub MR/PR.
 disable-model-invocation: true
 ---
 
@@ -9,8 +9,6 @@ disable-model-invocation: true
 Turn **manual test cases** (or a story) into Playwright coverage and a **review-ready GitHub pull request**. Do not merge. Stop when CI is complete and the PR is waiting on a reviewer.
 
 **Preferred input:** the user pastes manual test cases. Script those cases as written. Do not invent extra cases unless they ask.
-
-**Fallback:** if they only give a story/ticket with no cases, design about **10** cases, then script them.
 
 ## Deliverable
 
@@ -90,10 +88,6 @@ PR body template:
 ## Summary
 - Story / source: <ticket or "manual test cases">
 - Adds <N> Playwright cases (scripted from the input list; no extra cases).
-
-## Test cases
-1. ...
-2. ...
 
 ## Local
 - Command: <exact command>
