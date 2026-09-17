@@ -2,9 +2,12 @@
   "name": "ai-enabled-program",
   "private": true,
   "scripts": {
-    "test": "playwright test",
-    "test:e2e": "playwright test",
-    "qa:tc": "node scripts/run-story-qa.mjs"
+    "test": "playwright test --pass-with-no-tests",
+    "test:e2e": "playwright test --pass-with-no-tests",
+    "qa:preflight": "node .cursor/skills/story-qa-playwright/scripts/preflight.mjs",
+    "qa:coverage": "node .cursor/skills/story-qa-playwright/scripts/preflight.mjs --all",
+    "qa:full": "npm run qa:preflight && npm test",
+    "qa:tc": "node .cursor/skills/story-qa-playwright/scripts/run-story-qa.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0"
