@@ -78,6 +78,9 @@ This skill **requires** a commit and PR (that is the deliverable).
 - Branch: `test/<ticket-or-story-slug>` (fallback `test/story-qa`).
 - Do not change git config, skip hooks, or force-push.
 - Commit only QA-related files.
+- Include every relevant file touched by the scenario, including the actual Playwright spec (for example `tests/e2e/tc02.spec.ts`), any related manual-case or support files, and any repo files needed to keep the QA workflow valid.
+- Never leave a test implementation uncommitted or excluded from the PR just because it is "small" or "related".
+- Add a source comment above the relevant assertions that preserves the exact manual-case step/verification wording, without paraphrasing or rewording it. The comment should match the original step and expected result language precisely.
 - Push and open the PR with `gh`. Target the repo default branch.
 
 PR title: `test: cover <story> with Playwright`
@@ -118,6 +121,18 @@ When local tests and GitHub checks are green:
 - List the test cases
 - State that the pipeline finished and the PR is waiting for reviewer approval
 - Do **not** merge, do **not** request extra reviewers unless the user asked
+
+## Standard Prompt Template
+
+Use this wording when asking an agent to run the workflow in this repo:
+
+```text
+Implement TCxx using the repo QA workflow.
+Use the repo-defined instructions in .cursor/skills/story-qa-playwright/SKILL.md and the fixed entry-point script.
+Do not improvise outside the workflow. Run the repo validation, commit all related QA files, push the branch, create the PR against develop, and wait for the GitHub Actions checks to finish.
+```
+
+This is the standard prompt format expected for all TC implementations in this repo.
 
 ## Scripts
 
