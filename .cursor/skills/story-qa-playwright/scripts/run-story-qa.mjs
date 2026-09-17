@@ -140,6 +140,7 @@ try {
     ["Run local Playwright verification", playwrightCommand, playwrightArgs],
     ["Stage related QA files", "git", ["add", specFile, manualCasePath, "tests/pages", "tests/fixtures", ".github/workflows", "package.json", "package-lock.json", ...(existsSync(configPath) ? [configFile] : [])]],
     ["Commit QA changes", "git", ["commit", "-m", `test: cover manual ${caseId} with Playwright`]],
+    ["Pull target branch and verify conflicts", "git", ["pull", "--no-edit", "origin", "develop"]],
     ["Push branch", "git", ["push", "-u", "origin", branchName]],
     ["Open PR", ghCommand, ["pr", "create", "--base", baseBranch, "--head", branchName, "--title", `test: cover manual ${caseId} with Playwright`, "--body", `## Summary\n- Story / source: manual test cases\n- Adds 1 Playwright case (scripted from the input list; no extra cases).\n\n## Local\n- Command: ${playCommand}\n- Result: passed\n\n## Pipeline\n- The GitHub Actions workflow will start automatically after the PR is created.\n\n## Review\n- Do not merge until a reviewer approves.`]],
     ["Watch CI checks", ghCommand, ["pr", "checks", "--watch"]],
