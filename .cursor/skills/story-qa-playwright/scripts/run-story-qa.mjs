@@ -42,7 +42,7 @@ const playCommand = `${playwrightCommand} ${playwrightArgs.join(" ")}`;
 const runCommand = (command, argsList, allowFailure = false) => {
   const result = spawnSync(command, argsList, {
     cwd: process.cwd(),
-    shell: process.platform === "win32",
+    shell: process.platform === "win32" && command.endsWith(".cmd"),
     stdio: ["inherit", "pipe", "pipe"],
     encoding: "utf-8",
   });
@@ -75,8 +75,9 @@ const ensureNoUnexpectedRepoChanges = () => {
   const status = runCommand("git", ["status", "--porcelain", "--untracked-files=all"], true).stdout;
   const allowedExactPaths = new Set([specFile, manualCasePath, "package.json", "package-lock.json", configFile]);
   const allowedDirectories = ["tests/pages/", "tests/fixtures/", ".github/workflows/"];
+  const allowedWorkflowFiles = [".cursor/skills/story-qa-playwright/scripts/run-story-qa.mjs"];
   const unexpected = (status ?? "").split(/\r?\n/).filter(Boolean).map((line) => line.slice(3).replace(/\\/g, "/"))
-    .filter((path) => !allowedExactPaths.has(path) && !allowedDirectories.some((directory) => path.startsWith(directory)));
+    .filter((path) => !allowedExactPaths.has(path) && !allowedWorkflowFiles.includes(path) && !allowedDirectories.some((directory) => path.startsWith(directory)));
   if (unexpected.length > 0) {
     throw new Error(`Unexpected worktree changes. Only the requested case and QA support files may be staged: ${unexpected.join(", ")}`);
   }
@@ -105,7 +106,7 @@ const runStep = (label, command, argsList) => {
 
   const result = spawnSync(command, argsList, {
     cwd: process.cwd(),
-    shell: process.platform === "win32",
+    shell: process.platform === "win32" && command.endsWith(".cmd"),
     stdio: "inherit",
   });
 
@@ -138,7 +139,7 @@ try {
     ["Create QA branch", "git", ["switch", "-c", branchName]],
     ["Validate test file exists", "node", ["-e", `require('node:fs').existsSync(${JSON.stringify(specFile)}) || (() => { throw new Error(${JSON.stringify(`Missing test file: ${specFile}`)}) })()`]],
     ["Run local Playwright verification", playwrightCommand, playwrightArgs],
-    ["Stage related QA files", "git", ["add", specFile, manualCasePath, "tests/pages", "tests/fixtures", ".github/workflows", "package.json", "package-lock.json", ...(existsSync(configPath) ? [configFile] : [])]],
+    ["Stage related QA files", "git", ["add", specFile, manualCasePath, "tests/pages", ...(existsSync("tests/fixtures") ? ["tests/fixtures"] : []), ".github/workflows", ".cursor/skills/story-qa-playwright/scripts/run-story-qa.mjs", "package.json", "package-lock.json", ...(existsSync(configPath) ? [configFile] : [])]],
     ["Commit QA changes", "git", ["commit", "-m", `test: cover manual ${caseId} with Playwright`]],
     ["Pull target branch and verify conflicts", "git", ["pull", "--no-edit", "origin", "develop"]],
     ["Push branch", "git", ["push", "-u", "origin", branchName]],
