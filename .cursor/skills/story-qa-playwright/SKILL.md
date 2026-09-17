@@ -53,6 +53,7 @@ Accept messy manual-case text (spreadsheet paste, numbered list, Given/When/Then
 ### 3. Implement Playwright tests
 
 - Use `test` / `expect` from `@playwright/test`.
+- Every new test case must follow the Page Object Model: reuse or extend the existing page objects, and create a page object under the repository's established page-object directory when no suitable object exists. Keep locators and page interactions in page objects; keep the test spec focused on the manual-case flow, exact step comments, and expected-result assertions.
 - Prefer locators the app already uses (`getByRole`, `getByTestId`).
 - Isolate data: unique names, test fixtures, or API setup the repo already has. Do not rely on leftover UI state.
 - Keep tests independent; no order dependence.
@@ -81,6 +82,8 @@ This skill **requires** a commit and PR (that is the deliverable).
 - Include every relevant file touched by the scenario, including the actual Playwright spec (for example `tests/e2e/tc02.spec.ts`), any related manual-case or support files, and any repo files needed to keep the QA workflow valid.
 - Never leave a test implementation uncommitted or excluded from the PR just because it is "small" or "related".
 - Add a source comment above the relevant assertions that preserves the exact manual-case step/verification wording, without paraphrasing or rewording it. The comment should match the original step and expected result language precisely.
+- Put the step comment and the expected result comment in separate lines directly above the exact assertion code they describe. Do not combine them into a single line.
+- Use `await` for every asynchronous action that requires waiting on a locator, click, page navigation, reload, or visibility assertion.
 - Push and open the PR with `gh`. Target the repo default branch.
 
 PR title: `test: cover <story> with Playwright`
