@@ -16,6 +16,11 @@ export class PlaywrightPage {
   readonly body: Locator;
   readonly themeToggle: Locator;
   readonly githubRepositoryLink: Locator;
+  readonly apiLink: Locator;
+  readonly pageClassLink: Locator;
+  readonly browserClassLink: Locator;
+  readonly pageHeading: Locator;
+  readonly pageClickMethod: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -57,6 +62,12 @@ export class PlaywrightPage {
     this.githubRepositoryLink = page.getByRole("link", {
       name: "GitHub repository",
     });
+    this.apiLink = page.getByRole("link", { name: "API", exact: true });
+    const docsSidebar = page.getByRole("navigation", { name: "Docs sidebar" });
+    this.pageClassLink = docsSidebar.getByRole("link", { name: "Page", exact: true });
+    this.browserClassLink = docsSidebar.getByRole("link", { name: "Browser", exact: true });
+    this.pageHeading = page.getByRole("heading", { name: "Page", exact: true });
+    this.pageClickMethod = page.getByRole("heading", { name: /^click/ });
   }
 
   async openHomePage(): Promise<void> {
@@ -101,5 +112,13 @@ export class PlaywrightPage {
     const popupPromise = this.page.waitForEvent("popup");
     await this.githubRepositoryLink.click();
     return popupPromise;
+  }
+
+  async openApiReference(): Promise<void> {
+    await this.apiLink.click();
+  }
+
+  async openPageClassDocumentation(): Promise<void> {
+    await this.pageClassLink.click();
   }
 }
