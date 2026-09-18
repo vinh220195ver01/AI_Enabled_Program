@@ -15,7 +15,7 @@ Before implementation, verify:
 - The project root contains `package.json` and `playwright.config.*`.
 - The required Playwright dependency and browsers are available.
 - The repository has a Git remote and the GitHub CLI is authenticated (`gh auth status`).
-- The working tree is clean before the workflow starts. Existing user changes must be committed or stashed by the user; never discard them.
+- The workflow preserves unrelated user changes automatically. It temporarily stashes only paths outside the requested case and QA support allowlist, never discards them, and restores them after the workflow. Requested QA files must remain available for staging.
 - The manual case has steps and an expected result, or the story has enough acceptance criteria to derive cases.
 
 Use the portable runner from the project root:
@@ -86,7 +86,7 @@ Run the complete PR workflow only after local tests pass:
 node <skill-path>/scripts/run-story-qa.mjs <case-id>
 ```
 
-The runner discovers the remote default branch, uses `test/<case-slug>` by default, validates required files, checks a clean tree, runs Playwright, commits QA files, pushes, opens the PR, and watches checks. Override values when the project differs:
+The runner discovers the remote default branch, uses `test/<case-slug>` by default, validates required files, preserves unrelated worktree changes, runs Playwright, commits QA files, pushes, opens the PR, and watches checks. Override values when the project differs:
 
 ```bash
 node <skill-path>/scripts/run-story-qa.mjs <case-id> \
