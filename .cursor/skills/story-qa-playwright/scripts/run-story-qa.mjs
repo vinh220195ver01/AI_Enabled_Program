@@ -38,6 +38,7 @@ const ghCommand = process.platform === "win32" ? "gh.exe" : "gh";
 const playwrightCommand = process.platform === "win32" ? "npx.cmd" : "npx";
 const playwrightArgs = ["playwright", "test", specFile, "--reporter=line"];
 const playCommand = `${playwrightCommand} ${playwrightArgs.join(" ")}`;
+let temporaryStashCreated = false;
 
 const runCommand = (command, argsList, allowFailure = false) => {
   const result = spawnSync(command, argsList, {
@@ -71,16 +72,37 @@ const ensureRepoReady = () => {
   }
 };
 
-const ensureNoUnexpectedRepoChanges = () => {
+const getUnexpectedRepoChanges = () => {
   const status = runCommand("git", ["status", "--porcelain", "--untracked-files=all"], true).stdout;
   const allowedExactPaths = new Set([specFile, manualCasePath, "package.json", "package-lock.json", configFile]);
   const allowedDirectories = ["tests/pages/", "tests/fixtures/", ".github/workflows/"];
   const allowedWorkflowFiles = [".cursor/skills/story-qa-playwright/scripts/run-story-qa.mjs"];
   const unexpected = (status ?? "").split(/\r?\n/).filter(Boolean).map((line) => line.slice(3).replace(/\\/g, "/"))
     .filter((path) => !allowedExactPaths.has(path) && !allowedWorkflowFiles.includes(path) && !allowedDirectories.some((directory) => path.startsWith(directory)));
-  if (unexpected.length > 0) {
-    throw new Error(`Unexpected worktree changes. Only the requested case and QA support files may be staged: ${unexpected.join(", ")}`);
+  return unexpected;
+};
+
+const preserveUnexpectedRepoChanges = () => {
+  const unexpected = getUnexpectedRepoChanges();
+  if (unexpected.length === 0) return;
+
+  console.log(`Preserving unrelated worktree changes: ${unexpected.join(", ")}`);
+  const result = runCommand("git", ["stash", "push", "-u", "-m", `story-qa unrelated changes ${caseId}`, "--", ...unexpected], true);
+  if (result.status !== 0) {
+    throw new Error(`Unable to preserve unrelated worktree changes: ${unexpected.join(", ")}`);
   }
+  temporaryStashCreated = true;
+};
+
+const restoreUnexpectedRepoChanges = () => {
+  if (!temporaryStashCreated) return;
+
+  console.log("Restoring unrelated worktree changes.");
+  const result = runCommand("git", ["stash", "pop"], true);
+  if (result.status !== 0) {
+    throw new Error("Unrelated changes were preserved in the stash but could not be restored cleanly.");
+  }
+  temporaryStashCreated = false;
 };
 
 const ensureBranchNotExists = () => {
@@ -129,7 +151,7 @@ try {
     process.exit(0);
   }
 
-  ensureNoUnexpectedRepoChanges();
+  preserveUnexpectedRepoChanges();
   ensureBranchNotExists();
   ensureGhAuth();
 
@@ -154,5 +176,12 @@ try {
   console.log(`\nQA workflow completed for ${caseId}.`);
 } catch (error) {
   console.error(`\nQA workflow failed: ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
+  process.exitCode = 1;
+} finally {
+  try {
+    restoreUnexpectedRepoChanges();
+  } catch (error) {
+    console.error(`\nQA workflow cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
+    process.exitCode = 1;
+  }
 }
