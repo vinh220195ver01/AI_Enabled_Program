@@ -1,0 +1,53 @@
+{
+  "metrics": [
+    {
+      "name": "assertion_pass_rate",
+      "axis": "correctness",
+      "applies_to_layers": ["L1", "L2"],
+      "scorer_type": "assertion",
+      "scorer_ref": "agents/grader.md (from skill-creator) or manual assertion check",
+      "description": "Fraction of pre-registered assertions that pass for a given run."
+    },
+    {
+      "name": "rubric_quality_score",
+      "axis": "quality",
+      "applies_to_layers": ["L0", "L1", "L2"],
+      "scorer_type": "rubric",
+      "scorer_ref": "agents/input-layer-judge.md",
+      "description": "1-5 blind rubric score for dimensions assertions can't capture (clarity, tone, judgment)."
+    },
+    {
+      "name": "token_efficiency",
+      "axis": "efficiency",
+      "applies_to_layers": ["L1", "L2"],
+      "scorer_type": "derived",
+      "scorer_ref": "scripts/aggregate_layered.py",
+      "description": "Mean tokens consumed per run, with stddev across repeats."
+    },
+    {
+      "name": "time_efficiency",
+      "axis": "efficiency",
+      "applies_to_layers": ["L1", "L2"],
+      "scorer_type": "derived",
+      "scorer_ref": "scripts/aggregate_layered.py",
+      "description": "Mean wall-clock duration per run, with stddev across repeats."
+    },
+    {
+      "name": "run_variance",
+      "axis": "consistency",
+      "applies_to_layers": ["L1", "L2"],
+      "scorer_type": "derived",
+      "scorer_ref": "scripts/aggregate_layered.py",
+      "description": "Stddev of correctness/quality/efficiency across N repeats of the same prompt+configuration."
+    },
+    {
+      "name": "refinement_delta",
+      "axis": "correctness,quality,efficiency",
+      "applies_to_layers": ["L3"],
+      "scorer_type": "derived",
+      "scorer_ref": "agents/refinement-analyzer.md",
+      "description": "L2-minus-L1 comparison: which assertions flipped, where quality changed and why, substance-vs-polish judgment, cost/benefit verdict."
+    }
+  ],
+  "_extend_by": "Append a new object with name/axis/applies_to_layers/scorer_type/scorer_ref/description. scorer_type is one of: assertion (script-checkable), rubric (needs a blind judge prompt), derived (computed from other metrics' already-recorded data). No changes to SKILL.md's workflow steps are needed to pick up a new metric -- only the scorer implementation and this registry entry."
+}
