@@ -1,6 +1,6 @@
 ---
 name: story-qa-playwright
-description: "Use when converting manual test cases or a user story into Playwright end-to-end coverage, running the tests, and opening a review-ready GitHub pull request."
+description: "Use for story-to-test conversion, manual-case coverage, Playwright validation, and GitHub PR creation when a change needs end-to-end QA without merging. Trigger when the task is to derive cases from a story, map a manual checklist to a spec, run focused validation, find GitHub check status, or open a review-ready PR after local tests pass."
 disable-model-invocation: true
 ---
 
@@ -26,6 +26,16 @@ node <skill-path>/scripts/run-story-qa.mjs <case-id> --dry-run
 
 The dry run checks the project, manual case, and spec paths without changing Git state or requiring GitHub authentication.
 
+## Decision Framework
+
+Before choosing a case set or changing product code, reason in this order:
+
+1. Start from the actual evidence: manual steps, acceptance criteria, and the existing UI contract. Do not infer requirements that are not present.
+2. Derive the minimum meaningful scenarios. For a story, prefer the happy path plus the smallest set of alternate/validation/boundary cases that can fail for the real business reason. A case is justified only if it tests a distinct user decision, state transition, validation rule, or regression risk.
+3. Preserve explicit user-provided case lists. If the user already enumerated cases, do not broaden the scope by inventing additional scenarios unless a missing failure mode is clearly required to validate the same stated behavior.
+4. Decide whether product code changes are truly necessary. Only change product code when the application is blocking an honest test because of a real defect, missing accessibility hook, or state that the app should expose but does not. If the test can be written against the intended behavior without changing production code, do not change it.
+5. If a requirement is ambiguous, state the assumption and keep the test anchored to observable behavior rather than implementation details.
+
 ## Inputs And Mapping
 
 - If manual cases are supplied, preserve their IDs and titles. Implement one Playwright test per case or clearly separable scenario.
@@ -36,14 +46,41 @@ The dry run checks the project, manual case, and spec paths without changing Git
 
 ## Implementation Rules
 
-- Use `test` and `expect` from `@playwright/test`.
 - Keep test specs focused on the manual-case flow and expected assertions. Keep locators and reusable interactions in page objects.
-- Prefer `getByRole`, `getByLabel`, and existing test IDs.
 - Isolate data and keep tests independent; do not rely on test order or leftover UI state.
-- Never add `waitForTimeout`; wait on locators, assertions, or project-defined network signals.
+- Never add `waitForTimeout`; it hides the real condition you should be waiting for and makes the test flaky. Wait on locators, assertions, or project-defined network signals instead.
 - Add the exact manual step comment and exact expected-result comment on separate lines directly above the assertion they describe.
 - Change product code only when needed to make an honest test possible, and call out that change in the PR.
 - Ask only when a required step cannot be automated, such as a CAPTCHA, physical device action, or inaccessible email.
+- Use the project’s existing conventions for locators and assertions. Prefer semantic queries and existing test IDs when they already exist; do not add redundant, generic guidance that the model already knows.
+
+## Failure Recovery And Escalation
+
+Treat the workflow as a sequence of checkpoints. If a step fails, stop and recover before moving on.
+
+### Local failure (before push)
+
+- Read the failing assertion and fix the root cause in the test or product behavior; do not weaken the assertion to force a pass.
+- If the failure is caused by a genuine product bug, report it explicitly and ask how the team wants to proceed before continuing.
+- Re-run the focused test, then the full suite, before moving on to the PR workflow.
+
+### Branch or remote conflicts
+
+- If `git pull --no-edit origin develop` or the equivalent base-branch sync reports conflicts, stop immediately and resolve the conflict without discarding user work.
+- If the branch already exists, either switch to it if it is the correct branch for this work or create a new branch name only after confirming the current branch is not accidentally reused.
+- If the repo has unrelated uncommitted changes, do not overwrite them; stash, commit, or ask the user to preserve them before proceeding.
+
+### Post-push or CI failure
+
+- If `gh pr checks --watch` shows a failing, timed-out, cancelled, or still-pending check, do not claim success. Investigate the failing job and fix the cause before leaving the PR open.
+- If the pipeline fails after a clean local run, re-check the exact job log, compare the branch against the base, and look for environment-specific drift, missing fixtures, or config differences.
+- If the PR is blocked by a red check but the issue is unrelated to the QA work, document that clearly and do not mark the task complete.
+
+### Required stop conditions
+
+- Stop and ask for manual input when a test requires a CAPTCHA, physical device interaction, inaccessible email, or other non-automatable prerequisite.
+- Stop if the user has not explicitly approved a product-code change or if a branch conflict risks destroying unrelated work.
+- Do not merge. Leave the PR open for reviewer approval after all checks are green.
 
 ## Required Workflow
 

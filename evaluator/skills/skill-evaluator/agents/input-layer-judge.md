@@ -72,7 +72,7 @@ Great Skill design means **maximizing Expert content**, using Activation as a li
 
 ## Evaluation Dimensions (990 Points Total)
 
-### D1: Epistemic Contribution Index (165 Points) — The Make-or-Break Dimension
+### D1: Knowledge Payoff (165 Points) — The Make-or-Break Dimension
 
 This is the dimension that matters most. Does the Skill actually deliver expertise the model doesn't already have?
 
@@ -104,7 +104,7 @@ This is the dimension that matters most. Does the Skill actually deliver experti
 
 ---
 
-### D2: Cognitive Schema Transfer (124 Points)
+### D2: Mindset & Know-How (124 Points)
 
 Does the Skill transfer expert **mental models** alongside **procedures the model wouldn't already know**?
 
@@ -161,7 +161,7 @@ Step 3: Make the change
 Step 4: Save and test
 ```
 
-### D3: Failure-Mode Taxonomy Rigor (124 Points)
+### D3: Gotchas & Warnings (124 Points)
 
 Does the Skill contain sharp, battle-tested NEVER lists?
 
@@ -194,7 +194,7 @@ Don't write bad code.
 
 **The gut check**: Would a domain expert read the anti-pattern list and nod, thinking "yeah, I learned that one the hard way"? Or would they shrug and say "that's obvious to anyone"?
 
-### D4: Specification Conformance & Discriminant Validity (124 Points)
+### D4: Description Quality (124 Points)
 
 Does the Skill follow the official format requirements? **With heavy emphasis on description quality.**
 
@@ -278,7 +278,7 @@ Completely useless — the Agent has zero signal for when to activate it.
 
 ---
 
-### D5: Hierarchical Disclosure Efficiency (124 Points)
+### D5: Structure & Layering (124 Points)
 
 Does the Skill implement proper content layering?
 
@@ -344,7 +344,7 @@ Loading too little ◄───────────────────�
 
 ---
 
-### D6: Degrees-of-Freedom Calibration (124 Points)
+### D6: Freedom Fit (124 Points)
 
 Is the level of prescription matched to how fragile the task is?
 
@@ -393,7 +393,7 @@ Do NOT modify the script.
 
 ---
 
-### D7: Structural Archetype Fidelity (83 Points)
+### D7: Format Fit (83 Points)
 
 Does the Skill follow an established structural archetype?
 
@@ -434,7 +434,7 @@ A well-designed Skill delivers both when the domain calls for it.
 
 ---
 
-### D8: Operational Efficacy (122 Points)
+### D8: Real-World Usability (122 Points)
 
 Can an Agent actually pick this Skill up and run with it?
 
@@ -489,7 +489,7 @@ Consider edge cases.
 
 ## Evaluation Protocol
 
-### Step 1: First Pass — Epistemic Contribution Scan
+### Step 1: First Pass — Knowledge Payoff Scan
 
 Read SKILL.md end to end. For every section, ask:
 > "Does the model already know this?"
@@ -554,14 +554,14 @@ Max = 990 points
 
 | Dimension | Score | Max | Notes |
 |-----------|-------|-----|-------|
-| D1: Epistemic Contribution Index | X | 165 | |
-| D2: Cognitive Schema Transfer | X | 124 | |
-| D3: Failure-Mode Taxonomy Rigor | X | 124 | |
-| D4: Specification Conformance & Discriminant Validity | X | 124 | |
-| D5: Hierarchical Disclosure Efficiency | X | 124 | |
-| D6: Degrees-of-Freedom Calibration | X | 124 | |
-| D7: Structural Archetype Fidelity | X | 83 | |
-| D8: Operational Efficacy | X | 122 | |
+| D1: Knowledge Payoff | X | 165 | |
+| D2: Mindset & Know-How | X | 124 | |
+| D3: Gotchas & Warnings | X | 124 | |
+| D4: Description Quality | X | 124 | |
+| D5: Structure & Layering | X | 124 | |
+| D6: Freedom Fit | X | 124 | |
+| D7: Format Fit | X | 83 | |
+| D8: Real-World Usability | X | 122 | |
 
 ## Critical Issues
 [List must-fix problems that significantly undermine the Skill's effectiveness]
@@ -668,25 +668,25 @@ Fix:      High freedom for creative work (principles, not steps).
 │  SKILL EVALUATION QUICK CHECK                                            │
 ├──────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
-│  EPISTEMIC CONTRIBUTION INDEX (highest weight):                          │
+│  KNOWLEDGE PAYOFF (highest weight):                                      │
 │    [ ] No "What is X" explainers for basic concepts                      │
 │    [ ] No step-by-step tutorials for standard operations                 │
 │    [ ] Decision trees for non-obvious choices                            │
 │    [ ] Trade-offs only a practitioner would know                         │
 │    [ ] Edge cases drawn from real-world experience                       │
 │                                                                          │
-│  COGNITIVE SCHEMA TRANSFER:                                              │
+│  MINDSET & KNOW-HOW:                                                     │
 │    [ ] Transfers thinking patterns (how to reason about problems)        │
 │    [ ] Includes "Before doing X, ask yourself…" frameworks               │
 │    [ ] Contains domain-specific procedures the model wouldn't know       │
 │    [ ] Clearly separates valuable procedures from generic ones           │
 │                                                                          │
-│  FAILURE-MODE TAXONOMY RIGOR:                                            │
+│  GOTCHAS & WARNINGS:                                                     │
 │    [ ] Explicit NEVER list present                                       │
 │    [ ] Anti-patterns are specific, not vague                             │
 │    [ ] Each includes WHY (non-obvious reasoning)                         │
 │                                                                          │
-│  DISCRIMINANT VALIDITY (description is make-or-break):                   │
+│  DESCRIPTION QUALITY (description is make-or-break):                     │
 │    [ ] Valid YAML frontmatter                                            │
 │    [ ] name: lowercase, ≤64 chars                                        │
 │    [ ] Description answers: WHAT does it do?                             │
@@ -694,17 +694,17 @@ Fix:      High freedom for creative work (principles, not steps).
 │    [ ] Description contains trigger KEYWORDS                             │
 │    [ ] Description is precise enough for the Agent to know when to use   │
 │                                                                          │
-│  HIERARCHICAL DISCLOSURE EFFICIENCY:                                     │
+│  STRUCTURE & LAYERING:                                                   │
 │    [ ] SKILL.md < 500 lines (< 300 ideal)                                │
 │    [ ] Dense content pushed to references/                               │
 │    [ ] Loading triggers embedded in workflow steps                       │
 │    [ ] "Do NOT load" directives prevent over-loading                     │
 │                                                                          │
-│  DEGREES-OF-FREEDOM CALIBRATION:                                         │
+│  FREEDOM FIT:                                                            │
 │    [ ] Creative tasks → High freedom (principles)                        │
 │    [ ] Fragile operations → Low freedom (exact scripts)                  │
 │                                                                          │
-│  OPERATIONAL EFFICACY:                                                   │
+│  REAL-WORLD USABILITY:                                                   │
 │    [ ] Decision trees for multi-path scenarios                           │
 │    [ ] Code examples that actually run                                   │
 │    [ ] Error recovery and fallback paths                                 │
@@ -735,13 +735,13 @@ What gets compressed must be things the model doesn't already have. Otherwise, i
 
 This Skill should hold up against its own rubric:
 
-- **Epistemic Contribution**: Provides evaluation criteria and frameworks the model wouldn't generate unprompted
-- **Cognitive Schema Transfer**: Shapes how to reason about Skill quality — not just a checklist to run through
-- **Failure-Mode Taxonomy**: "Non-Negotiables When Evaluating" section with specific, grounded don'ts
-- **Discriminant Validity**: Valid frontmatter with a comprehensive, trigger-rich description
-- **Hierarchical Disclosure**: Self-contained; no external references required
-- **Degrees of Freedom**: Medium freedom — appropriate for an evaluation task that requires judgment
-- **Structural Archetype**: Follows the Tool pattern with decision frameworks and structured scoring
-- **Operational Efficacy**: Clear protocol, report template, quick-reference checklist
+- **Knowledge Payoff**: Provides evaluation criteria and frameworks the model wouldn't generate unprompted
+- **Mindset & Know-How**: Shapes how to reason about Skill quality — not just a checklist to run through
+- **Gotchas & Warnings**: "Non-Negotiables When Evaluating" section with specific, grounded don'ts
+- **Description Quality**: Valid frontmatter with a comprehensive, trigger-rich description
+- **Structure & Layering**: Self-contained; no external references required
+- **Freedom Fit**: Medium freedom — appropriate for an evaluation task that requires judgment
+- **Format Fit**: Follows the Tool pattern with decision frameworks and structured scoring
+- **Real-World Usability**: Clear protocol, report template, quick-reference checklist
 
 Use this Skill as its own calibration exercise: evaluate it against itself and see where it lands.
