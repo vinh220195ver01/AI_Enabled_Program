@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /**
- * Push the current branch and open a PR. Adapted from the old story-qa-playwright
- * skill's run-story-qa.mjs — the PR-creation portion only, generalized away from
- * hardcoded manual-case/spec paths and title text. See SKILL.md.
+ * Push the current branch and open a PR — the github-pr skill's PR-creation helper.
+ * See SKILL.md.
  *
  * Usage:
  *   node create-pr.mjs --branch <name> --base <branch> --title <title> --body-file <path>

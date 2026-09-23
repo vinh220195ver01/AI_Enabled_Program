@@ -4,10 +4,12 @@
   "scripts": {
     "test": "playwright test --pass-with-no-tests",
     "test:e2e": "playwright test --pass-with-no-tests",
-    "qa:preflight": "node .cursor/skills/story-qa-playwright/scripts/preflight.mjs",
-    "qa:coverage": "node .cursor/skills/story-qa-playwright/scripts/preflight.mjs --all",
+    "qa:preflight": "node .cursor/skills/automation-script-generator/scripts/preflight.mjs",
+    "qa:coverage": "node .cursor/skills/automation-script-generator/scripts/preflight.mjs --all",
     "qa:full": "npm run qa:preflight && npm test",
-    "qa:tc": "node .cursor/skills/story-qa-playwright/scripts/run-story-qa.mjs"
+    "qa:branch": "node .cursor/skills/git-workflow/scripts/sync-and-branch.mjs",
+    "qa:pr": "node .cursor/skills/github-pr/scripts/create-pr.mjs",
+    "qa:pr:watch": "node .cursor/skills/github-pr/scripts/wait-pr-pipeline.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0"

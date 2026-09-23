@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /**
- * Generalized branch/commit helper for any coding task (not QA-specific).
- * Adapted from the old story-qa-playwright skill's run-story-qa.mjs — the git portion
- * only, generalized away from hardcoded manual-case/spec paths. See SKILL.md.
+ * Generalized branch/commit helper for any coding task (not QA-specific) —
+ * the git-workflow skill's sync/branch/commit helper. See SKILL.md.
  *
  * Usage:
  *   node sync-and-branch.mjs --branch <name> --message <msg> --file <path> [--file <path> ...]
