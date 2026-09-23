@@ -64,7 +64,7 @@ The pre-registration record from Step 1. Written before any run happens.
 
 ## l0_scores.json
 
-Output of the input-layer judge (Step 2): the 8-dimension, 990-point skill-quality rubric (`dimensions`) plus the three eval-design checks (`eval_design_checks`) from `agents/input-layer-judge.md`. Kept as separate top-level keys on purpose — `dimensions` scores whether the target skill's SKILL.md is well-designed (including D4's triggering quality); `eval_design_checks` scores three different things: whether this evaluation's own instructions-clarity read and prepared test prompts are trustworthy, *and* whether the description's claims are factually true (distinct from D4 — a description can trigger perfectly while overpromising). Mixing these into one 990+15-point total would hide which artifact a low score is actually about.
+Output of the input-layer judge (Step 2): the 8-dimension, 1–5-per-dimension (40-point max) skill-quality rubric (`dimensions`) plus the three eval-design checks (`eval_design_checks`) from `agents/input-layer-judge.md`. Kept as separate top-level keys on purpose — `dimensions` scores whether the target skill's SKILL.md is well-designed (including D4's triggering quality); `eval_design_checks` scores three different things: whether this evaluation's own instructions-clarity read and prepared test prompts are trustworthy, *and* whether the description's claims are factually true (distinct from D4 — a description can trigger perfectly while overpromising). Mixing these into one 40+15-point total would hide which artifact a low score is actually about.
 
 ```json
 {
@@ -95,49 +95,49 @@ Output of the input-layer judge (Step 2): the 8-dimension, 990-point skill-quali
   },
   "dimensions": {
     "d1_knowledge_payoff": {
-      "score": 120,
-      "max": 165,
+      "score": 4,
+      "max": 5,
       "notes": "Mostly expert-grade trade-offs, but the 'Setting Up Your Environment' section rehashes basic pip install steps the model already knows."
     },
     "d2_mindset_know_how": {
-      "score": 95,
-      "max": 124,
+      "score": 4,
+      "max": 5,
       "notes": "Includes a solid mental-model framework ('Before validating, ask...') plus a non-generic OOXML pack/unpack workflow."
     },
     "d3_gotchas_warnings": {
-      "score": 80,
-      "max": 124,
+      "score": 3,
+      "max": 5,
       "notes": "Has a NEVER list but only two of five items include the non-obvious WHY behind them."
     },
     "d4_description_quality": {
-      "score": 108,
-      "max": 124,
+      "score": 4,
+      "max": 5,
       "notes": "Description covers WHAT and WHEN with concrete trigger scenarios; missing a couple of discoverability keywords (file extensions)."
     },
     "d5_structure_layering": {
-      "score": 100,
-      "max": 124,
+      "score": 4,
+      "max": 5,
       "notes": "References directory exists with embedded MANDATORY loading triggers; SKILL.md is 340 lines, within the sweet spot."
     },
     "d6_freedom_fit": {
-      "score": 90,
-      "max": 124,
+      "score": 3,
+      "max": 5,
       "notes": "Correctly locks down the low-freedom file-format operations; one creative sub-task is over-scripted."
     },
     "d7_format_fit": {
-      "score": 60,
-      "max": 83,
+      "score": 3,
+      "max": 5,
       "notes": "Follows the Tool pattern well; decision tree for tool selection is present but not exhaustive."
     },
     "d8_real_world_usability": {
-      "score": 100,
-      "max": 122,
+      "score": 4,
+      "max": 5,
       "notes": "Strong fallback table for common failure modes; missing recovery guidance for encrypted-file edge case."
     }
   },
-  "total_score": 753,
-  "max_score": 990,
-  "percentage": 76.1,
+  "total_score": 29,
+  "max_score": 40,
+  "percentage": 72.5,
   "grade": "C",
   "verdict": "Adequate — genuine expert content throughout, but description keywords and gotcha rationale need tightening before this clears B.",
   "critical_issues": [

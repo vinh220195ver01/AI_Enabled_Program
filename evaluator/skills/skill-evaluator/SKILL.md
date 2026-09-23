@@ -90,7 +90,7 @@ The pre-registration and control rationale is documented in `references/scientif
 Before spending compute on L1/L2 runs, sanity-check the input itself. A skill can fail purely because its description undertriggers, or its instructions are ambiguous; the scientific-method rationale for this gate is in `references/scientific-method.md`.
 
 Use `agents/input-layer-judge.md`, which scores two separate artifacts:
-- **The full 8-dimension, 990-point skill-quality rubric (D1–D8)** — score all eight, not just D4. D4 (Description Quality) is the one most directly about triggering: would this description fire reliably on realistic queries, including near-miss negatives? (If skill-creator is present, its "Description Optimization" trigger-eval loop is the more rigorous version of that D4 check specifically — defer to it when available.)
+- **The full 8-dimension, 1–5-per-dimension skill-quality rubric (D1–D8, 40 points max)** — score all eight, not just D4. D4 (Description Quality) is the one most directly about triggering: would this description fire reliably on realistic queries, including near-miss negatives? (If skill-creator is present, its "Description Optimization" trigger-eval loop is the more rigorous version of that D4 check specifically — defer to it when available.)
 - **Instruction clarity** and **test prompt realism** (the file's separate "Eval-Design Checks" section, 1–5 each): are steps unambiguous enough that two independent runs would take the same approach, and are the L1 test prompts things a real user would actually type, including messy/casual phrasing?
 
 Record scores in `evals/l0_scores.json` (`dimensions` + `eval_design_checks`, per `references/schemas.md`).

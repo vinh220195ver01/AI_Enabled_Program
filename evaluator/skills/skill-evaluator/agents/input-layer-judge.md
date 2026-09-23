@@ -4,11 +4,11 @@ You are scoring the **L0 input layer**: the skill's own SKILL.md and the test pr
 
 ## What to score
 
-Read the skill's `SKILL.md` in full, plus the prepared eval prompts (`evals/eval_plan.json`). Most dimensions (D1, D2, D3, D4, D6, D8) also draw on the skill's bundled `agents/`/`references/`/`scripts/` content where relevant — e.g. D3 checks whether NEVER-lists anywhere in the bundle have real WHY behind them, D8 checks whether bundled fallback logic is concrete. **D5 and D7 are the two exceptions with their own explicit scope**: D5 evaluates how the bundle is *layered* (are files loaded on demand, with Do-NOT-load guardrails), and D7 (per its own scoping note below) grades `SKILL.md`'s archetype fit specifically, not the bundle's. Score each of the 8 dimensions below on its own point scale, with a one-to-three sentence justification citing specific text — then run the three eval-design checks in the next section, which score different artifacts entirely.
+Read the skill's `SKILL.md` in full, plus the prepared eval prompts (`evals/eval_plan.json`). Most dimensions (D1, D2, D3, D4, D6, D8) also draw on the skill's bundled `agents/`/`references/`/`scripts/` content where relevant — e.g. D3 checks whether NEVER-lists anywhere in the bundle have real WHY behind them, D8 checks whether bundled fallback logic is concrete. **D5 and D7 are the two exceptions with their own explicit scope**: D5 evaluates how the bundle is *layered* (are files loaded on demand, with Do-NOT-load guardrails), and D7 (per its own scoping note below) grades `SKILL.md`'s archetype fit specifically, not the bundle's. Score each of the 8 dimensions below on its own 1–5 scale, with a one-to-three sentence justification citing specific text — then run the three eval-design checks in the next section, which score different artifacts entirely.
 
-## Eval-Design Checks (separate from the 990-point rubric below, scored after it)
+## Eval-Design Checks (separate from the 40-point rubric below, scored after it)
 
-The 990-point rubric below judges one thing: whether the target skill's own SKILL.md is well-designed. It does not tell you whether that SKILL.md's instructions are unambiguous enough to produce convergent runs, or whether the eval prompts prepared for testing it are realistic — those are different artifacts, scored here, not folded into D1–D8.
+The 40-point rubric below (8 dimensions × 1–5 each) judges one thing: whether the target skill's own SKILL.md is well-designed. It does not tell you whether that SKILL.md's instructions are unambiguous enough to produce convergent runs, or whether the eval prompts prepared for testing it are realistic — those are different artifacts, scored here, not folded into D1–D8.
 
 ### Instruction Clarity (1–5)
 
@@ -61,20 +61,21 @@ Quote the specific claim and the specific (or absent) implementation it's checke
 
 The conceptual background behind this rubric — what a Skill is, the Expert/Activation/Redundant content model the dimensions below apply — lives in `references/skill-design-primer.md`. It's split out on purpose: it's teaching material for someone writing a NEW skill, not part of the mechanism for scoring an existing one. **Do NOT load it as part of an L0 scoring pass** — the dimension tables below are self-sufficient for grading. Load it only if you (or the user) want the reasoning behind why the rubric is shaped this way, or a failure-pattern catalog for skill-authoring rather than skill-grading.
 
-## Evaluation Dimensions (990 Points Total)
+## Evaluation Dimensions (8 Dimensions, 1–5 Each, 40 Points Total)
 
-### D1: Knowledge Payoff (165 Points) — The Make-or-Break Dimension
+### D1: Knowledge Payoff (1–5) — The Make-or-Break Dimension
 
 This is the dimension that matters most. Does the Skill actually deliver expertise the model doesn't already have?
 
 | Score | What It Looks Like |
 |---|---|
-| 0–41 | Rehashes fundamentals the model knows cold (definitions, basic syntax, standard library walkthroughs) |
-| 42–82 | Some genuine insight buried under layers of obvious filler |
-| 83–123 | Predominantly expert-grade content with only minor redundancy |
-| 124–165 | Pure signal — every paragraph justifies its token cost |
+| 1 | Rehashes fundamentals the model knows cold (definitions, basic syntax, standard library walkthroughs) |
+| 2 | Almost entirely filler, with at most a rare flash of genuine insight |
+| 3 | Some genuine insight buried under layers of obvious filler |
+| 4 | Predominantly expert-grade content with only minor redundancy |
+| 5 | Pure signal — every paragraph justifies its token cost |
 
-**Instant low-score indicators** (caps score at ≤41):
+**Instant low-score indicators** (caps score at ≤2):
 - "What is [well-known concept]" explainers
 - Step-by-step walkthroughs of standard operations
 - Tutorials on widely-used libraries
@@ -97,7 +98,7 @@ This is the dimension that matters most. Does the Skill actually deliver experti
 
 ---
 
-### D2: Mindset & Know-How (124 Points)
+### D2: Mindset & Know-How (1–5)
 
 Does the Skill transfer expert **mental models** alongside **procedures the model wouldn't already know**?
 
@@ -113,10 +114,11 @@ The gap between an expert and a novice isn't about knowing the mechanics — it'
 
 | Score | What It Looks Like |
 |---|---|
-| 0–25 | Only generic how-to steps the model can already infer |
-| 26–57 | Includes domain procedures but no frameworks for thinking |
-| 58–91 | Solid mix: expert reasoning patterns paired with domain-specific workflows |
-| 92–124 | Expert-grade: reshapes how the model thinks AND supplies procedures it wouldn't know |
+| 1 | Only generic how-to steps the model can already infer |
+| 2 | Mostly generic steps with an occasional domain-specific nod |
+| 3 | Includes domain procedures but no frameworks for thinking |
+| 4 | Solid mix: expert reasoning patterns paired with domain-specific workflows |
+| 5 | Expert-grade: reshapes how the model thinks AND supplies procedures it wouldn't know |
 
 **Procedures that earn their tokens**:
 - Workflows around tools or systems the model hasn't been trained on (proprietary pipelines, niche toolchains)
@@ -154,7 +156,7 @@ Step 3: Make the change
 Step 4: Save and test
 ```
 
-### D3: Gotchas & Warnings (124 Points)
+### D3: Gotchas & Warnings (1–5)
 
 Does the Skill contain sharp, battle-tested NEVER lists?
 
@@ -164,10 +166,11 @@ The model hasn't stepped on those landmines. It doesn't know that Inter is overp
 
 | Score | What It Looks Like |
 |---|---|
-| 0–25 | No anti-patterns mentioned at all |
-| 26–57 | Vague, toothless warnings ("avoid errors," "be careful," "consider edge cases") |
-| 58–91 | Concrete NEVER list backed by some reasoning |
-| 92–124 | Expert-grade anti-patterns with clear WHY — the kind of knowledge only scar tissue teaches |
+| 1 | No anti-patterns mentioned at all |
+| 2 | Vague, toothless warnings ("avoid errors," "be careful," "consider edge cases") |
+| 3 | A few concrete anti-patterns, but without consistent reasoning behind them |
+| 4 | Concrete NEVER list backed by some reasoning |
+| 5 | Expert-grade anti-patterns with clear WHY — the kind of knowledge only scar tissue teaches |
 
 **Strong anti-patterns** (specific, with rationale):
 ```markdown
@@ -187,16 +190,17 @@ Don't write bad code.
 
 **The gut check**: Would a domain expert read the anti-pattern list and nod, thinking "yeah, I learned that one the hard way"? Or would they shrug and say "that's obvious to anyone"?
 
-### D4: Description Quality (124 Points)
+### D4: Description Quality (1–5)
 
 Does the Skill follow the official format requirements? **With heavy emphasis on description quality.**
 
 | Score | What It Looks Like |
 |---|---|
-| 0–41 | Frontmatter missing or structurally broken |
-| 42–82 | Frontmatter exists but the description is vague or incomplete |
-| 83–107 | Valid frontmatter; description captures WHAT but weak on WHEN |
-| 108–124 | Flawless: description nails WHAT, WHEN, and trigger keywords |
+| 1 | Frontmatter missing or structurally broken |
+| 2 | Frontmatter exists but the description is vague or incomplete |
+| 3 | Valid frontmatter; description captures WHAT but weak on WHEN and keywords |
+| 4 | Valid frontmatter; description captures WHAT and WHEN, missing a few discoverability keywords |
+| 5 | Flawless: description nails WHAT, WHEN, and trigger keywords |
 
 **Frontmatter requirements**:
 - `name`: lowercase, alphanumeric + hyphens only, ≤64 characters
@@ -247,7 +251,7 @@ Completely useless — the Agent has zero signal for when to activate it.
 
 ---
 
-### D5: Structure & Layering (124 Points)
+### D5: Structure & Layering (1–5)
 
 Does the Skill implement proper content layering? **Score how the bundle is organized and loaded — SKILL.md's tiering, trigger placement, and Do-NOT-load guardrails — not the substantive quality of what's inside each bundled file** (that's D1/D2/D3's job on the content itself, and D7's job for SKILL.md's own archetype fit).
 
@@ -268,10 +272,11 @@ Tier 3: Resources (loaded on demand)
 
 | Score | What It Looks Like |
 |---|---|
-| 0–41 | Everything crammed into SKILL.md (>500 lines, no layering) |
-| 42–82 | Has references but no clear guidance on when to load them |
-| 83–107 | Solid layering with MANDATORY loading triggers in place |
-| 108–124 | Textbook: decision trees + explicit triggers + "Do NOT load" guardrails |
+| 1 | Everything crammed into SKILL.md (>500 lines, no layering) |
+| 2 | Has references but no clear guidance on when to load them |
+| 3 | Some layering exists, but loading triggers are inconsistent or partial |
+| 4 | Solid layering with MANDATORY loading triggers in place |
+| 5 | Textbook: decision trees + explicit triggers + "Do NOT load" guardrails |
 
 **For Skills that include a references directory**, evaluate loading trigger quality:
 
@@ -313,7 +318,7 @@ Loading too little ◄───────────────────�
 
 ---
 
-### D6: Freedom Fit (124 Points)
+### D6: Freedom Fit (1–5)
 
 Is the level of prescription matched to how fragile the task is?
 
@@ -321,10 +326,11 @@ Different domains demand different amounts of constraint. This dimension is abou
 
 | Score | What It Looks Like |
 |---|---|
-| 0–41 | Severely mismatched (rigid scripts for creative work, hand-waving for fragile operations) |
-| 42–82 | Partially calibrated, with notable mismatches |
-| 83–107 | Well-tuned for most scenarios |
-| 108–124 | Precision-calibrated freedom throughout |
+| 1 | Severely mismatched (rigid scripts for creative work, hand-waving for fragile operations) |
+| 2 | Multiple notable mismatches across sub-tasks |
+| 3 | Partially calibrated, with notable mismatches |
+| 4 | Well-tuned for most scenarios |
+| 5 | Precision-calibrated freedom throughout |
 
 **The freedom spectrum**:
 
@@ -364,7 +370,7 @@ Do NOT modify the script.
 
 ---
 
-### D7: Format Fit (83 Points)
+### D7: Format Fit (1–5)
 
 Does the Skill follow an established structural archetype?
 
@@ -381,14 +387,15 @@ Based on analysis of 17 official Skills, five core design patterns emerge. A six
 | **Tool** | ~300 | Decision trees, code snippets, low freedom | docx, pdf, xlsx | Precise operations on specific formats |
 | **Framework** | Varies | SKILL.md is a phased protocol (often Process-shaped) that *orchestrates* a cross-referenced ecosystem of its own — a formal rubric, JSON schemas, scorer scripts, sub-agents — where correctness depends on those pieces staying consistent with each other, not on any single file's brevity | A hypothetical `accessibility-auditor` skill that scores a website's HTML against WCAG rules and returns a compliance report | Skills whose deliverable is *measuring or auditing other skills/artifacts*, not producing a deliverable directly |
 
-**Framework is a genuine sixth pattern, not an excuse bucket.** The 17-skill sample that produced the other five patterns were all task-execution skills (write a doc, review code, extract a table) — none of them measure other skills for a living, so none of the five patterns were built with that job in mind. A skill legitimately belongs in Framework only if its actual output *is* a judgment about some other artifact (a score, an audit, a pass/fail), not if it merely happens to be long or reference-heavy — a bloated Tool-pattern skill is still badly-fit Tool, not well-fit Framework. For a genuine Framework-pattern skill, "masterful application" (67-83 band) means: the rubric/schema/script/agent pieces are mutually consistent (a fact stated in one isn't contradicted in another), the protocol steps are followable end-to-end, and the whole ecosystem is navigable via explicit cross-references — not that any single file hits a specific line count.
+**Framework is a genuine sixth pattern, not an excuse bucket.** The 17-skill sample that produced the other five patterns were all task-execution skills (write a doc, review code, extract a table) — none of them measure other skills for a living, so none of the five patterns were built with that job in mind. A skill legitimately belongs in Framework only if its actual output *is* a judgment about some other artifact (a score, an audit, a pass/fail), not if it merely happens to be long or reference-heavy — a bloated Tool-pattern skill is still badly-fit Tool, not well-fit Framework. For a genuine Framework-pattern skill, "masterful application" (score 5) means: the rubric/schema/script/agent pieces are mutually consistent (a fact stated in one isn't contradicted in another), the protocol steps are followable end-to-end, and the whole ecosystem is navigable via explicit cross-references — not that any single file hits a specific line count.
 
 | Score | What It Looks Like |
 |---|---|
-| 0–21 | No recognizable pattern; chaotic or formless structure |
-| 22–42 | Partially follows a pattern with significant structural drift |
-| 43–66 | Clear pattern alignment with minor deviations |
-| 67–83 | Masterful application of the right pattern for the job |
+| 1 | No recognizable pattern; chaotic or formless structure |
+| 2 | Partially follows a pattern with significant structural drift |
+| 3 | Recognizable pattern, but with several deviations |
+| 4 | Clear pattern alignment with minor deviations |
+| 5 | Masterful application of the right pattern for the job |
 
 **Pattern selection guide**:
 
@@ -411,16 +418,17 @@ A well-designed Skill delivers both when the domain calls for it.
 
 ---
 
-### D8: Real-World Usability (122 Points)
+### D8: Real-World Usability (1–5)
 
 Can an Agent actually pick this Skill up and run with it?
 
 | Score | What It Looks Like |
 |---|---|
-| 0–41 | Confusing, incomplete, contradictory, or untested guidance |
-| 42–81 | Functional but with noticeable blind spots |
-| 82–106 | Clear, actionable guidance for the common cases |
-| 107–122 | Comprehensive coverage — including edge cases, fallbacks, and error recovery |
+| 1 | Confusing, incomplete, contradictory, or untested guidance |
+| 2 | Functional but with noticeable blind spots |
+| 3 | Workable, but with real gaps in edge-case or error-recovery coverage |
+| 4 | Clear, actionable guidance for the common cases |
+| 5 | Comprehensive coverage — including edge cases, fallbacks, and error recovery |
 
 **What to look for**:
 - **Decision trees**: When the workflow branches, is there unambiguous guidance on which path to take?
@@ -502,18 +510,18 @@ For each of the 8 dimensions:
 
 ```
 Total = D1 + D2 + D3 + D4 + D5 + D6 + D7 + D8
-Max = 990 points
+Max = 40 points (8 dimensions x 5 each)
 ```
 
 **Grading Scale** (percentage-based):
 
 | Grade | Percentage | Points | Meaning |
 |---|---|---|---|
-| A | 90%+ | 891+ | Excellent — production-ready expert Skill |
-| B | 80–89% | 792–890 | Good — minor refinements needed |
-| C | 70–79% | 693–791 | Adequate — clear improvement path exists |
-| D | 60–69% | 594–692 | Below average — significant issues present |
-| F | <60% | <594 | Poor — needs fundamental redesign |
+| A | 90%+ | 36–40 | Excellent — production-ready expert Skill |
+| B | 80–89% | 32–35 | Good — minor refinements needed |
+| C | 70–79% | 28–31 | Adequate — clear improvement path exists |
+| D | 60–69% | 24–27 | Below average — significant issues present |
+| F | <60% | <24 | Poor — needs fundamental redesign |
 
 ### Step 5: Generate Report
 
@@ -525,7 +533,7 @@ The Markdown report below is a **rendering of that same JSON for a human to read
 # Skill Evaluation Report: [Skill Name]
 
 ## Summary
-- **Total Score**: X/990 (X%)
+- **Total Score**: X/40 (X%)
 - **Grade**: [A/B/C/D/F]
 - **Pattern**: [Mindset/Navigation/Philosophy/Process/Tool/Framework]
 - **Knowledge Ratio**: E:A:R = X:Y:Z
@@ -543,14 +551,14 @@ The Markdown report below is a **rendering of that same JSON for a human to read
 
 | Dimension | Score | Max | Notes |
 |-----------|-------|-----|-------|
-| D1: Knowledge Payoff | X | 165 | |
-| D2: Mindset & Know-How | X | 124 | |
-| D3: Gotchas & Warnings | X | 124 | |
-| D4: Description Quality | X | 124 | |
-| D5: Structure & Layering | X | 124 | |
-| D6: Freedom Fit | X | 124 | |
-| D7: Format Fit | X | 83 | |
-| D8: Real-World Usability | X | 122 | |
+| D1: Knowledge Payoff | X | 5 | |
+| D2: Mindset & Know-How | X | 5 | |
+| D3: Gotchas & Warnings | X | 5 | |
+| D4: Description Quality | X | 5 | |
+| D5: Structure & Layering | X | 5 | |
+| D6: Freedom Fit | X | 5 | |
+| D7: Format Fit | X | 5 | |
+| D8: Real-World Usability | X | 5 | |
 
 ## Critical Issues
 [List must-fix problems that significantly undermine the Skill's effectiveness]

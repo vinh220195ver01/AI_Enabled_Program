@@ -14,7 +14,7 @@
       "applies_to_layers": ["L0"],
       "scorer_type": "rubric",
       "scorer_ref": "agents/input-layer-judge.md",
-      "description": "8-dimension, 990-point rubric (D1-D8, quality axis) scoring the target skill's own SKILL.md design quality, plus a separate 1-5 Eval-Design Checks trio: instruction clarity and test prompt realism (quality axis), and description accuracy -- references/layers-and-metrics.md's L0 Correctness axis ('is the description factually accurate about what the skill does?'), which is why this entry is tagged with both axes, not quality alone. L0 only — see rubric_quality_score below for L1/L2."
+      "description": "8-dimension, 1-5-per-dimension rubric (D1-D8, quality axis, 40 points max) scoring the target skill's own SKILL.md design quality, plus a separate 1-5 Eval-Design Checks trio: instruction clarity and test prompt realism (quality axis), and description accuracy -- references/layers-and-metrics.md's L0 Correctness axis ('is the description factually accurate about what the skill does?'), which is why this entry is tagged with both axes, not quality alone. L0 only — see rubric_quality_score below for L1/L2."
     },
     {
       "name": "rubric_quality_score",
@@ -22,7 +22,7 @@
       "applies_to_layers": ["L1", "L2"],
       "scorer_type": "rubric",
       "scorer_ref": "agents/generic-quality-judge.md",
-      "description": "1-5 blind rubric score per dimension for output-level quality assertions can't capture (clarity, tone, judgment). Prefer an adapted skill-creator quality judge when reachable; otherwise agents/generic-quality-judge.md -- it doesn't carry a fixed rubric, it defines the discipline for pre-registering one into eval_plan.json's scope.quality_rubric before any output exists. Routing rule: use manual_tc_quality_score (below) whenever the skill under test writes manual test cases; use this entry for every other skill type instead — never both for the same run. NOT agents/input-layer-judge.md (L0-only, 990-point scale) and NOT agents/manual-tc-quality-judge.md (that's manual_tc_quality_score's scorer, not this one)."
+      "description": "1-5 blind rubric score per dimension for output-level quality assertions can't capture (clarity, tone, judgment). Prefer an adapted skill-creator quality judge when reachable; otherwise agents/generic-quality-judge.md -- it doesn't carry a fixed rubric, it defines the discipline for pre-registering one into eval_plan.json's scope.quality_rubric before any output exists. Routing rule: use manual_tc_quality_score (below) whenever the skill under test writes manual test cases; use this entry for every other skill type instead — never both for the same run. NOT agents/input-layer-judge.md (L0-only, 8-dimension 1-5-per-dimension scale) and NOT agents/manual-tc-quality-judge.md (that's manual_tc_quality_score's scorer, not this one)."
     },
     {
       "name": "manual_tc_quality_score",

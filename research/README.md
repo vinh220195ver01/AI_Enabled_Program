@@ -4,6 +4,8 @@ Playwright coverage for the project's manual test cases.
 
 ## QA skills
 
+See [`.cursor/agent.md`](.cursor/agent.md) for the full lifecycle map (phase order, handoffs, and stop conditions) — read that first when running the whole Excel-to-PR flow. It's a plain guide any model can follow, not a triggered skill.
+
 The workflow is split across 8 skills in `.cursor/skills/`, each owning one step so it can be reused or replaced independently:
 
 | Skill | Responsibility |
