@@ -32,6 +32,8 @@ State the efficiency cost of refinement (extra tokens, extra time) next to what 
 
 ## Output format
 
+Save at `<workspace>/L3/<eval-id>/refinement-analysis.json` — a schema entry for this exact shape lives in `references/schemas.md`. `scripts/aggregate_layered.py`'s `compute_l3_delta` computes the *numeric* deltas independently from `result.json` files (it never reads this file); this output is the qualitative substance-vs-polish/worth-it judgment that only a reader of the actual text can make, reported alongside the numbers, not in place of them.
+
 ```json
 {
   "eval_id": 1,

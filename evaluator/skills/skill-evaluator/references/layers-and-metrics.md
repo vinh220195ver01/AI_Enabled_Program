@@ -37,7 +37,7 @@ A skill's output doesn't exist in isolation — it's the end of a chain: someone
 
 **What it is:** What the model produces after L1 goes through the *actual* refinement mechanism the skill or workflow uses — a human-feedback-and-rerun loop, a self-critique step, an editor pass. This layer only exists if that mechanism genuinely exists in practice.
 
-**Critical rule: do not invent a refinement step to get an L2 score.** If the skill has no real review/refine loop, skip L2 and L3 entirely and say so in the report. A synthetic "ask the model to improve its own output once, for the sake of having an L2" measures something, but it's not measuring the skill's actual refinement process — label it clearly as exploratory if you do it anyway, and don't let it masquerade as validating a real workflow.
+**Critical rule: do not invent a refinement step to get an L2 score.** If the skill has no real review/refine loop, skip L2 and L3 entirely and say so in the report. A synthetic "ask the model to improve its own output once, for the sake of having an L2" measures something, but it's not measuring the skill's actual refinement process — it's a different, weaker claim wearing the same L2 label, and this framework's Non-Negotiables treat it as a hard no, not a labeled-exploratory option: don't do it, full stop, not even flagged as exploratory. The risk isn't the first report that carefully labels it — it's the second one that quietly drops the label.
 
 **Which axes apply:** Same four as L1, scored identically (same assertions, same rubric) so L1 and L2 numbers are directly comparable — that comparability is the entire point of this layer existing.
 

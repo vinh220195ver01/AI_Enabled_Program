@@ -4,71 +4,62 @@ You are scoring the **L0 input layer**: the skill's own SKILL.md and the test pr
 
 ## What to score
 
-Read the skill's SKILL.md in full, plus the prepared eval prompts (`evals/eval_plan.json`). Score each dimension 1–5 with a one-to-two sentence justification citing specific text.
+Read the skill's `SKILL.md` in full, plus the prepared eval prompts (`evals/eval_plan.json`). Most dimensions (D1, D2, D3, D4, D6, D8) also draw on the skill's bundled `agents/`/`references/`/`scripts/` content where relevant — e.g. D3 checks whether NEVER-lists anywhere in the bundle have real WHY behind them, D8 checks whether bundled fallback logic is concrete. **D5 and D7 are the two exceptions with their own explicit scope**: D5 evaluates how the bundle is *layered* (are files loaded on demand, with Do-NOT-load guardrails), and D7 (per its own scoping note below) grades `SKILL.md`'s archetype fit specifically, not the bundle's. Score each of the 8 dimensions below on its own point scale, with a one-to-three sentence justification citing specific text — then run the three eval-design checks in the next section, which score different artifacts entirely.
+
+## Eval-Design Checks (separate from the 990-point rubric below, scored after it)
+
+The 990-point rubric below judges one thing: whether the target skill's own SKILL.md is well-designed. It does not tell you whether that SKILL.md's instructions are unambiguous enough to produce convergent runs, or whether the eval prompts prepared for testing it are realistic — those are different artifacts, scored here, not folded into D1–D8.
+
+### Instruction Clarity (1–5)
+
+Would two independent runs, given only the skill's instructions and no other context, take the same approach? Read every step that branches or requires judgment and check whether it names a concrete criterion or just gestures at one.
+
+| Score | What it looks like |
+|---|---|
+| 1 | Steps use catch-all verbs ("handle appropriately," "process as needed," "act accordingly") with no criterion for what "appropriately" means |
+| 3 | Most steps are concrete; one or two leave a judgment call unresolved |
+| 5 | Every branch or judgment call names the concrete criterion that resolves it — two independent readers would take the same path |
+
+Quote the specific phrase that earns or costs the score — "instructions seem clear" with no quote is not gradeable.
+
+### Test Prompt Realism (1–5)
+
+Score the prompts in `evals/eval_plan.json`, not the skill. Would an actual user type this, messy phrasing and all — or does it read like a sanitized textbook example built to make the skill look good?
+
+| Score | What it looks like |
+|---|---|
+| 1 | Prompt is a clean, textbook-perfect request no real user phrases that precisely |
+| 3 | Plausible, but missing the typos/ambiguity/incomplete context a real request usually carries |
+| 5 | Reads like something copy-pasted from an actual user — casual phrasing, possibly incomplete, the kind of messiness real requests have |
+
+If `evals/eval_plan.json` doesn't exist yet (L0 is being scored before prompts are written), skip this check and say so explicitly — don't invent prompts just to have something to score.
+
+### Description Accuracy (1–5)
+
+Distinct from D4 (which scores whether the description *triggers well* — WHAT/WHEN/keywords). This scores whether the description is *telling the truth*: read the description's claims, then check each one against what the body/bundle actually does. A description that triggers beautifully but overpromises is a correctness defect, not a quality one — this is `references/layers-and-metrics.md`'s L0 Correctness axis ("is the description factually accurate about what the skill does?").
+
+| Score | What it looks like |
+|---|---|
+| 1 | Description claims a capability the body/bundle doesn't actually deliver (e.g. claims "blind grading" but no file implements blinding), or claims scope well beyond what's implemented |
+| 3 | Description is broadly accurate but overstates one detail, or omits a real limitation a user would want to know before triggering it |
+| 5 | Every claim in the description is checkable against actual body/bundle content and holds up — no overpromising, no silently-unimplemented capability |
+
+Quote the specific claim and the specific (or absent) implementation it's checked against — "seems accurate" with no cross-reference is not gradeable.
+
+**Output** (goes in `l0_scores.json` alongside `dimensions`, not added into `total_score` — see `references/schemas.md` for why the two are kept separate):
+```json
+"eval_design_checks": {
+  "instruction_clarity": {"score": 4, "max": 5, "notes": "Step 3 says 'handle malformed rows appropriately' with no criterion — the one ambiguous branch in an otherwise concrete workflow."},
+  "test_prompt_realism": {"score": 5, "max": 5, "notes": "Eval prompt 2 ('yo this csv export is busted again, 3rd time this week, can u just fix it') reads like an actual user message, not a cleaned-up spec."},
+  "description_accuracy": {"score": 5, "max": 5, "notes": "Description claims 'blind grading' -- confirmed implemented in agents/comparator.md (label reveal only after scoring) and references/scientific-method.md rule 4. No unimplemented claims found."}
+}
+```
+
+---
 
 # Skill Design & Evaluation Framework
 
-### Defining a Skill
-
-A Skill is a **knowledge injection layer**, not a how-to guide.
-
-Conventional approaches to expanding AI capability rely on retraining:
-```
-Conventional: Gather data → Spin up GPUs → Retrain model → Redeploy
-Cost: $10K – $1M+
-Turnaround: Weeks to months
-```
-
-Skills bypass all of that:
-```
-Skill: Update a Markdown file → Save → Active on next run
-Cost: Nothing
-Turnaround: Immediate
-```
-
-The fundamental shift here is from **training** to **teaching**. Think of it like a plug-and-play expertise module — no gradient descent, no fine-tuning. You write plain-language instructions in a `.md` file, and the model behaves differently. It's behavioral steering through documentation.
-
-### The Value Equation
-
-> **Effective Skill = Specialized Expertise − Model's Existing Knowledge**
-
-A Skill's worth comes down to its **knowledge delta** — the distance between what it contributes and what the model can already figure out on its own.
-
-- **Specialized expertise**: Heuristics, judgment calls, failure modes, non-obvious trade-offs, domain-specific mental models — the kind of insight that takes years in the trenches to develop
-- **Model's existing knowledge**: Foundational concepts, common API usage, standard coding idioms, textbook best practices
-
-If a Skill spends tokens explaining "what is a PDF" or "how a for-loop works," it's rehashing what the model already carries. That's **wasted context** — and context is a shared, finite resource split between system prompts, conversation history, other Skills, and the user's actual request.
-
-### Tools vs. Skills
-
-| | Essence | Role | Examples |
-|---|---|---|---|
-| **Tool** | What the model *can execute* | Enables actions | `bash`, `read_file`, `write_file`, `WebSearch` |
-| **Skill** | What the model *knows how to reason about* | Shapes decisions | PDF pipelines, MCP server design, frontend architecture |
-
-Tools set the boundary of what's possible — no `bash` tool means no command execution, period.
-Skills set the boundary of what's *good* — no frontend-design Skill means generic, uninspired UI output.
-
-**The formula**:
-```
-Generic Agent + Well-Crafted Skill = Specialist Agent
-```
-
-Same underlying model. Different Skill loaded. Different expert emerges.
-
-### Three Categories of Skill Content
-
-Every section in a Skill falls into one of these buckets:
-
-| Category | What It Means | How to Handle It |
-|---|---|---|
-| **Expert** | Knowledge the model genuinely lacks | Preserve — this is the Skill's reason for existing |
-| **Activation** | Knowledge the model has but might not surface unprompted | Keep sparingly — useful as a nudge, not a lecture |
-| **Redundant** | Knowledge the model already reliably applies | Remove — it burns tokens for zero benefit |
-
-Great Skill design means **maximizing Expert content**, using Activation as a light touch, and cutting Redundant material without mercy.
-
----
+The conceptual background behind this rubric — what a Skill is, the Expert/Activation/Redundant content model the dimensions below apply — lives in `references/skill-design-primer.md`. It's split out on purpose: it's teaching material for someone writing a NEW skill, not part of the mechanism for scoring an existing one. **Do NOT load it as part of an L0 scoring pass** — the dimension tables below are self-sufficient for grading. Load it only if you (or the user) want the reasoning behind why the rubric is shaped this way, or a failure-pattern catalog for skill-authoring rather than skill-grading.
 
 ## Evaluation Dimensions (990 Points Total)
 
@@ -101,6 +92,8 @@ This is the dimension that matters most. Does the Skill actually deliver experti
 1. Section by section: "Would the model already produce this without the Skill?"
 2. For explanatory passages: "Is this informing the model of something new, or restating what it already knows?"
 3. Tally: how many paragraphs are Expert vs. Activation vs. Redundant?
+
+**For a Framework-pattern Skill (D7) whose job is applying known methodology, not inventing domain facts:** don't dock D1 just because the underlying principles (pre-registration, blinding, statistical hygiene, etc.) are things the model could describe in the abstract. The knowledge delta for this category isn't "here's a fact you didn't know" — it's "here's how those known principles get correctly *operationalized* into a working system: which principle applies at which step, what concrete mechanism enforces it, what breaks if you skip it." Score the operationalization (does it name the specific gate, script, or schema field that makes the principle real, not just restate the principle) as the Expert content; only the un-operationalized restatement of a principle ("N=1 tells you nothing about consistency," full stop, no tie-in to anything concrete) counts as Activation.
 
 ---
 
@@ -211,22 +204,7 @@ Does the Skill follow the official format requirements? **With heavy emphasis on
 
 ---
 
-**Why the description is everything**:
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│  SKILL ACTIVATION FLOW                                               │
-│                                                                      │
-│  User request → Agent scans ALL skill descriptions → Picks which    │
-│                  (only descriptions — never the body)   to load     │
-│                                                                      │
-│  Description doesn't match  → Skill is NEVER loaded                 │
-│  Description is vague       → Skill fails to trigger when it should │
-│  Description lacks keywords → Skill is invisible to the Agent       │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-**The hard reality**: A Skill with flawless content but a weak description is **dead on arrival** — the Agent will never activate it. The description is your **one and only pitch** to tell the Agent "load me for these situations."
+**Why the description is everything**: the Agent scans only descriptions — never the body — to decide what to load. A Skill with flawless content but a weak description is **dead on arrival**: the Agent will never activate it. The description is your **one and only pitch** to tell the Agent "load me for these situations."
 
 ---
 
@@ -269,18 +247,9 @@ Completely useless — the Agent has zero signal for when to activate it.
 
 ---
 
-**Description quality checklist**:
-- [ ] Enumerates specific capabilities (not just "helps with X")
-- [ ] Spells out trigger scenarios ("Use when…", "When user asks for…")
-- [ ] Contains searchable keywords (file extensions, domain terms, action verbs)
-- [ ] Precise enough that the Agent knows EXACTLY when to reach for it
-- [ ] Includes scenarios where this Skill MUST be used — not just "can be used"
-
----
-
 ### D5: Structure & Layering (124 Points)
 
-Does the Skill implement proper content layering?
+Does the Skill implement proper content layering? **Score how the bundle is organized and loaded — SKILL.md's tiering, trigger placement, and Do-NOT-load guardrails — not the substantive quality of what's inside each bundled file** (that's D1/D2/D3's job on the content itself, and D7's job for SKILL.md's own archetype fit).
 
 Skill loading operates across three tiers:
 ```
@@ -391,13 +360,17 @@ Do NOT modify the script.
 - High-stakes failure → Lock it down (low freedom)
 - Low-stakes failure → Open it up (high freedom)
 
+**For a Framework-pattern Skill (D7):** don't score freedom fit as if the whole Skill must sit at one point on the spectrum — a Framework skill legitimately contains sub-tasks at opposite ends simultaneously (e.g. mechanical, low-freedom correctness grading right next to open, high-freedom hypothesis-writing), because it orchestrates fragile and judgment-heavy work side by side, not because it's poorly calibrated. Apply the calibration test *per sub-task*: does the low-freedom part (data interchange, blind-label mechanics, aggregation math) stay genuinely low-freedom, and does the high-freedom part (scoping, rubric authorship, verdict judgment) stay genuinely open rather than over-specified? A Framework skill that gets both right scores in the top band even though — unlike a single-purpose Skill — its overall "freedom level" isn't one number.
+
 ---
 
 ### D7: Format Fit (83 Points)
 
 Does the Skill follow an established structural archetype?
 
-Based on analysis of 17 official Skills, five core design patterns emerge:
+**Score the skill's `SKILL.md` against these patterns — not its bundled `agents/`/`references/`/`scripts/` files.** Those Tier-3 resources have "no hard limit" by design (see D5) and are judged there, on layering and loading discipline, not here, on archetype fit. A skill can legitimately bundle a long reference file (a big rubric, a large lookup table) while its own `SKILL.md` is a clean, short Process or Tool fit — scoring D7 against the longest bundled file instead of `SKILL.md` double-penalizes length that D5 already accounts for, and answers a question ("does this *file* match a pattern") the dimension isn't asking.
+
+Based on analysis of 17 official Skills, five core design patterns emerge. A sixth, Framework, is added below for a category those 17 didn't include — it rests on a single hypothetical illustration, not a 17-skill survey, so hold it to the same fit test but don't treat its "~lines" figure or defining traits as equally battle-tested yet. It has deliberately not been anchored to any real skill in this bundle, `skill-evaluator` included — grading yourself against a pattern whose only example is you is exactly the circularity this rubric's own blinding principle warns about elsewhere. If you encounter a real Framework-pattern skill (this one or another), that's the evidence this pattern should be refined against next:
 
 | Pattern | ~Lines | Defining Traits | Example | Best For |
 |---|---|---|---|---|
@@ -406,6 +379,9 @@ Based on analysis of 17 official Skills, five core design patterns emerge:
 | **Philosophy** | ~150 | Two-phase: Philosophy → Express, emphasis on craft | canvas-design | Art/creation requiring originality |
 | **Process** | ~200 | Phased workflow, checkpoints, medium freedom | mcp-builder | Complex multi-step projects |
 | **Tool** | ~300 | Decision trees, code snippets, low freedom | docx, pdf, xlsx | Precise operations on specific formats |
+| **Framework** | Varies | SKILL.md is a phased protocol (often Process-shaped) that *orchestrates* a cross-referenced ecosystem of its own — a formal rubric, JSON schemas, scorer scripts, sub-agents — where correctness depends on those pieces staying consistent with each other, not on any single file's brevity | A hypothetical `accessibility-auditor` skill that scores a website's HTML against WCAG rules and returns a compliance report | Skills whose deliverable is *measuring or auditing other skills/artifacts*, not producing a deliverable directly |
+
+**Framework is a genuine sixth pattern, not an excuse bucket.** The 17-skill sample that produced the other five patterns were all task-execution skills (write a doc, review code, extract a table) — none of them measure other skills for a living, so none of the five patterns were built with that job in mind. A skill legitimately belongs in Framework only if its actual output *is* a judgment about some other artifact (a score, an audit, a pass/fail), not if it merely happens to be long or reference-heavy — a bloated Tool-pattern skill is still badly-fit Tool, not well-fit Framework. For a genuine Framework-pattern skill, "masterful application" (67-83 band) means: the rubric/schema/script/agent pieces are mutually consistent (a fact stated in one isn't contradicted in another), the protocol steps are followable end-to-end, and the whole ecosystem is navigable via explicit cross-references — not that any single file hits a specific line count.
 
 | Score | What It Looks Like |
 |---|---|
@@ -423,6 +399,7 @@ Based on analysis of 17 official Skills, five core design patterns emerge:
 | Branches into distinct sub-scenarios | Navigation (~30 lines) |
 | Multi-step project with clear phases | Process (~200 lines) |
 | Precise operations on a specific format | Tool (~300 lines) |
+| Measures, scores, or audits other skills/artifacts | Framework (length varies with what it orchestrates) |
 
 ---
 
@@ -540,15 +517,27 @@ Max = 990 points
 
 ### Step 5: Generate Report
 
+**Which artifact is canonical:** when this file is used inside `skill-evaluator`'s own workflow (Step 2 of `SKILL.md`), the JSON file `evals/l0_scores.json` — shaped per `references/schemas.md` — is the artifact of record. Step 6's aggregation, `scripts/aggregate_layered.py`, cross-version comparisons, and skill-creator's eval-viewer all read that JSON by fixed field name; nothing downstream reads the Markdown below. Write `l0_scores.json` first.
+
+The Markdown report below is a **rendering of that same JSON for a human to read in conversation**, not a second deliverable — every field maps directly (`total_score`/`max_score` → the Summary line, `dimensions.d1_knowledge_payoff` etc. → the Dimension Scores table row, `eval_design_checks.*` → the Eval-Design Checks section, `critical_issues`/`top_improvements` → the matching sections). The template below always includes the Eval-Design Checks block — when this file is used standalone rather than through `skill-evaluator`'s Step 2 (e.g. a one-off skill quality report with no `evals/eval_plan.json` prepared), omit that section rather than inventing scores for it, per the Test Prompt Realism rule above ("skip this check and say so explicitly").
+
 ```markdown
 # Skill Evaluation Report: [Skill Name]
 
 ## Summary
 - **Total Score**: X/990 (X%)
 - **Grade**: [A/B/C/D/F]
-- **Pattern**: [Mindset/Navigation/Philosophy/Process/Tool]
+- **Pattern**: [Mindset/Navigation/Philosophy/Process/Tool/Framework]
 - **Knowledge Ratio**: E:A:R = X:Y:Z
 - **Verdict**: [One sentence assessment]
+
+## Eval-Design Checks
+
+| Check | Score | Notes |
+|---|---|---|
+| Instruction Clarity | X/5 | |
+| Test Prompt Realism | X/5 (or "skipped — no eval_plan.json") | |
+| Description Accuracy | X/5 | |
 
 ## Dimension Scores
 
@@ -580,138 +569,7 @@ Max = 990 points
 
 ---
 
-## Common Failure Patterns
-
-### Pattern 1: The Tutorial Trap
-```
-Symptom:  Explains what a PDF is, how Python works, basic library usage
-Root cause: Author assumes the Skill's job is to "teach" the model
-Fix:      The model already knows this. Strip all basic explanations.
-          Redirect focus to expert decisions, trade-offs, and anti-patterns.
-```
-
-### Pattern 2: The Info Dump
-```
-Symptom:  SKILL.md bloats past 800+ lines with everything thrown in
-Root cause: No progressive disclosure strategy
-Fix:      Core routing and decision trees in SKILL.md (<300 lines ideal).
-          Move detailed content to references/, loaded on demand.
-```
-
-### Pattern 3: The Orphaned References
-```
-Symptom:  references/ directory exists but files are never actually loaded
-Root cause: No explicit loading triggers in the workflow
-Fix:      Add "MANDATORY — READ ENTIRE FILE" at workflow branch points.
-          Add "Do NOT load" directives to prevent unnecessary loading.
-```
-
-### Pattern 4: The Checkbox Walkthrough
-```
-Symptom:  Step 1, Step 2, Step 3… mechanical procedures with no reasoning
-Root cause: Author thinks in operations, not decision frameworks
-Fix:      Reframe as "Before doing X, ask yourself…"
-          Center on decision principles, not operation sequences.
-```
-
-### Pattern 5: The Vague Warning
-```
-Symptom:  "Be careful," "avoid errors," "consider edge cases"
-Root cause: Author senses things can go wrong but hasn't pinpointed the specifics
-Fix:      Replace with a concrete NEVER list — specific examples + non-obvious reasons.
-          "NEVER use X because [problem that takes real experience to discover]"
-```
-
-### Pattern 6: The Invisible Skill
-```
-Symptom:  Stellar content but the Skill barely ever gets activated
-Root cause: Description is vague, lacks keywords, or omits trigger scenarios
-Fix:      Description must answer WHAT, WHEN, and include KEYWORDS.
-          "Use when…" + specific scenarios + searchable terms
-
-Example fix:
-BAD:  "Helps with document tasks"
-GOOD: "Create, edit, and analyze .docx files. Use when working with
-       Word documents, tracked changes, or professional document formatting."
-```
-
-### Pattern 7: The Misplaced Trigger
-```
-Symptom:  "When to use this Skill" lives in the body, not the description
-Root cause: Misunderstanding of the three-tier loading model
-Fix:      Move all triggering information into the description field.
-          The body is only loaded AFTER the activation decision is already made.
-```
-
-### Pattern 8: The Over-Engineered Package
-```
-Symptom:  README.md, CHANGELOG.md, INSTALLATION_GUIDE.md, CONTRIBUTING.md
-Root cause: Treating the Skill like a software project
-Fix:      Delete all auxiliary files. Include only what the Agent needs to do the job.
-          No documentation about the Skill itself — only documentation for the task.
-```
-
-### Pattern 9: The Freedom Mismatch
-```
-Symptom:  Rigid scripts imposed on creative tasks, vague pointers given for fragile operations
-Root cause: No consideration of task fragility
-Fix:      High freedom for creative work (principles, not steps).
-          Low freedom for fragile operations (exact scripts, locked parameters).
-```
-
----
-
-## Quick Reference Checklist
-
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│  SKILL EVALUATION QUICK CHECK                                            │
-├──────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  KNOWLEDGE PAYOFF (highest weight):                                      │
-│    [ ] No "What is X" explainers for basic concepts                      │
-│    [ ] No step-by-step tutorials for standard operations                 │
-│    [ ] Decision trees for non-obvious choices                            │
-│    [ ] Trade-offs only a practitioner would know                         │
-│    [ ] Edge cases drawn from real-world experience                       │
-│                                                                          │
-│  MINDSET & KNOW-HOW:                                                     │
-│    [ ] Transfers thinking patterns (how to reason about problems)        │
-│    [ ] Includes "Before doing X, ask yourself…" frameworks               │
-│    [ ] Contains domain-specific procedures the model wouldn't know       │
-│    [ ] Clearly separates valuable procedures from generic ones           │
-│                                                                          │
-│  GOTCHAS & WARNINGS:                                                     │
-│    [ ] Explicit NEVER list present                                       │
-│    [ ] Anti-patterns are specific, not vague                             │
-│    [ ] Each includes WHY (non-obvious reasoning)                         │
-│                                                                          │
-│  DESCRIPTION QUALITY (description is make-or-break):                     │
-│    [ ] Valid YAML frontmatter                                            │
-│    [ ] name: lowercase, ≤64 chars                                        │
-│    [ ] Description answers: WHAT does it do?                             │
-│    [ ] Description answers: WHEN should it activate?                     │
-│    [ ] Description contains trigger KEYWORDS                             │
-│    [ ] Description is precise enough for the Agent to know when to use   │
-│                                                                          │
-│  STRUCTURE & LAYERING:                                                   │
-│    [ ] SKILL.md < 500 lines (< 300 ideal)                                │
-│    [ ] Dense content pushed to references/                               │
-│    [ ] Loading triggers embedded in workflow steps                       │
-│    [ ] "Do NOT load" directives prevent over-loading                     │
-│                                                                          │
-│  FREEDOM FIT:                                                            │
-│    [ ] Creative tasks → High freedom (principles)                        │
-│    [ ] Fragile operations → Low freedom (exact scripts)                  │
-│                                                                          │
-│  REAL-WORLD USABILITY:                                                   │
-│    [ ] Decision trees for multi-path scenarios                           │
-│    [ ] Code examples that actually run                                   │
-│    [ ] Error recovery and fallback paths                                 │
-│    [ ] Edge cases accounted for                                          │
-│                                                                          │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+A catalog of 9 recurring failure patterns (Tutorial Trap, Info Dump, Orphaned References, Checkbox Walkthrough, Vague Warning, Invisible Skill, Misplaced Trigger, Over-Engineered Package, Freedom Mismatch), each with symptom/root cause/fix, has moved to `references/skill-design-primer.md`. It's a supplementary worked-example set — the dimension tables above already contain each pattern's diagnostic signal (e.g. D1's "instant low-score indicators" is Pattern 1; D5's score bands are Pattern 2/3) — load the primer only if you want the illustrated version.
 
 ---
 
@@ -731,17 +589,8 @@ What gets compressed must be things the model doesn't already have. Otherwise, i
 
 ---
 
-## Self-Evaluation Note
+## On Self-Evaluation (read this, don't load a scored verdict)
 
-This Skill should hold up against its own rubric:
+This rubric can legitimately be pointed at itself — `SKILL.md` (not this file, per D7's scoping rule above) is a valid L0 target like any other skill's. But there used to be a "Self-Evaluation Note" here that pre-wrote one favorable sentence per dimension, sitting a few hundred lines below D8 in the same file every grader must load to get the rubric tables. It was removed, not softened, because that's the un-blinded setup `references/scientific-method.md` rule 4 and this skill's own Non-Negotiables forbid ("Never let a quality judge see which configuration produced an output before scoring it") — self-eval material is not exempt from that rule just because the "configuration" being judged happens to be this file itself. (Deliberately not quoting the removed text here either — even citing it as a bad example re-seeds the same words in front of the next grader.)
 
-- **Knowledge Payoff**: Provides evaluation criteria and frameworks the model wouldn't generate unprompted
-- **Mindset & Know-How**: Shapes how to reason about Skill quality — not just a checklist to run through
-- **Gotchas & Warnings**: "Non-Negotiables When Evaluating" section with specific, grounded don'ts
-- **Description Quality**: Valid frontmatter with a comprehensive, trigger-rich description
-- **Structure & Layering**: Self-contained; no external references required
-- **Freedom Fit**: Medium freedom — appropriate for an evaluation task that requires judgment
-- **Format Fit**: Follows the Tool pattern with decision frameworks and structured scoring
-- **Real-World Usability**: Clear protocol, report template, quick-reference checklist
-
-Use this Skill as its own calibration exercise: evaluate it against itself and see where it lands.
+If you want to check whether this rubric holds up: run it blind, the same way you'd run it on any other skill. Don't write the justification first and grade to match it.
