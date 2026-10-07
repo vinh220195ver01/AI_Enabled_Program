@@ -1,0 +1,44 @@
+{
+  "profile": "manual-qa",
+  "version": "0.2-skeleton",
+  "source": "TODO: name of the Excel file these rows were copied from",
+  "overall": {
+    "weights": {
+      "general_l0": "TODO: number >= 0, weight of the skill-evaluator D1-D8 score (after overrides)",
+      "rubric": "TODO: number >= 0, weight of the rubric criteria below",
+      "coverage": "TODO: number >= 0, weight of baseline scenario/verification-point coverage",
+      "checks": "TODO: number >= 0, weight of the binary check criteria below (0 if there are none)"
+    }
+  },
+  "l0_overrides": [
+    {
+      "dimension": "D3",
+      "change": "weight",
+      "weight": 2.0,
+      "reason": "TODO: why this course weights this L0 dimension differently. Delete this example entry if there are no overrides."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C01",
+      "name": "TODO: criterion name, e.g. Traceability",
+      "type": "rubric",
+      "weight": 1.0,
+      "gate_min": 2,
+      "description": "TODO: what this criterion measures, copied from the Excel row",
+      "anchors": {
+        "1": "TODO: what a score of 1 looks like",
+        "3": "TODO: what a score of 3 looks like",
+        "5": "TODO: what a score of 5 looks like"
+      },
+      "instant_low_flag": "TODO: a concrete pattern that caps this criterion at 1-2, or null"
+    },
+    {
+      "id": "C02",
+      "name": "TODO: a pass/fail criterion, e.g. Uses the mandated TC template",
+      "type": "check",
+      "critical": true,
+      "text": "TODO: one binary, literally-checkable statement about the output"
+    }
+  ]
+}

@@ -55,6 +55,9 @@ The pre-registration record from Step 1. Written before any run happens.
 - `scope.layers`: which of L0/L1/L2/L3 apply to this evaluation — omit L2/L3 if there's no real refinement step
 - `scope.has_refinement_step` / `refinement_mechanism`: forces an explicit statement of whether L2 is real or would be synthetic
 - `scope.quality_rubric`: only present when quality is a primary axis and no fixed quality judge applies (i.e. `agents/generic-quality-judge.md` is in play, not `manual-tc-quality-judge.md` or a skill-creator judge) — the dimensions and score anchors, written before any L1 output exists, per that file's own rule against writing a rubric after seeing what it would grade
+- `scope.quality_rubric.dimensions[]` may carry two optional extra keys beside the 1/3/5 anchors: `weight` (used for a weighted `overall_score`) and `instant_low_flag`. Both are written by `scripts/build_plan_from_profile.py`; see `references/assessment-profiles.md`.
+- `baseline.type` may be `assessment_baseline`, meaning the control is a fixed answer key (`profiles/<name>/baseline.json`) rather than another configuration. Assertion ids from a profile are prefixed `scn:`, `vp:`, `chk:`.
+- `scope.assessment` (profile runs only): `overall_weights` (parts `general_l0`/`rubric`/`coverage`/`checks`) and `l0_overrides[]` (`dimension` D1-D8, `change` `weight`|`anchors`, `reason`). Assertions from a profile carry `critical`; rubric dimensions carry `gate_min`. All are copied from the profile at pre-registration, so they cannot change after outputs are seen.
 - `scope.n_repeats`: N, fixed before running
 - `baseline`: what L1 (and L2, if present) is compared against
 - `evals[].assertions[]`: the pre-registered set — every entry has `pre_registered: true`. Never append a post-hoc assertion here, even with `pre_registered: false`; a mixed-flag array is exactly the kind of thing a future reader skims past without noticing which entries actually count as evidence.
@@ -151,6 +154,8 @@ Output of the input-layer judge (Step 2): the 8-dimension, 1–5-per-dimension (
 }
 ```
 
+`overrides_applied[]` (optional, top level of `l0_scores.json`): one entry per profile override of type `anchors`, `{"dimension": "D3", "default_score": 3, "final_score": 4}`. `dimensions.<dN>.score` always holds the final score. Empty or absent when no override applies.
+
 **Why this shape:** `dimensions[].notes` is required, not decorative — a bare `total_score` without a quote-backed note is unusable at Step 7, because there's nothing to tell the skill's author which specific line to fix. `critical_issues` and `top_improvements` are kept as two separate arrays rather than one prioritized list: a critical issue is a reason to fix before shipping, an improvement is a reason to fix before the next version — merging them loses that distinction the moment someone skims just one array.
 
 ---
@@ -186,6 +191,8 @@ One file per run, extending skill-creator's `grading.json` with a `layer` field.
   "grading_notes": []
 }
 ```
+
+`correctness` may also carry an optional `coverage` block (`scenarios` and `verification_points`, each with `covered`, `required`, `missed[]`), written by `agents/manual-qa-assessment-judge.md`. `scripts/aggregate_layered.py` ignores it; it is for the report.
 
 `grading_notes` (from `agents/grader.md`) is a sibling of `correctness`, not nested inside it — it carries anything that should feed back into L0 (ambiguous wording, bundled assertions, assertions that turned out untestable). Leave it `[]` when there's nothing to report; don't manufacture notes to fill the field.
 

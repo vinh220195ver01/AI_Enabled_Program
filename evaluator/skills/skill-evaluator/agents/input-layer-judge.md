@@ -61,6 +61,14 @@ Quote the specific claim and the specific (or absent) implementation it's checke
 
 The conceptual background behind this rubric — what a Skill is, the Expert/Activation/Redundant content model the dimensions below apply — lives in `references/skill-design-primer.md`. It's split out on purpose: it's teaching material for someone writing a NEW skill, not part of the mechanism for scoring an existing one. **Do NOT load it as part of an L0 scoring pass** — the dimension tables below are self-sufficient for grading. Load it only if you (or the user) want the reasoning behind why the rubric is shaped this way, or a failure-pattern catalog for skill-authoring rather than skill-grading.
 
+## Profile overrides (only when `eval_plan.json` has `scope.assessment.l0_overrides`)
+
+A course profile may override specific dimensions (see `references/assessment-profiles.md`). Precedence: **the plan's override wins over the default text below, for exactly the dimensions it lists, and for nothing else.** Every other dimension is scored as written here. The override was pre-registered; you do not add, widen, or skip one yourself.
+
+- `change: "anchors"`: score that dimension against the override's 1/3/5 anchors instead of the default table. Also score it once against the default table, and record both in `overrides_applied[]` (`dimension`, `default_score`, `final_score`). `dimensions.<dN>.score` holds the **final** (override) score.
+- `change: "weight"`: score the dimension normally. The weight is applied later by `scripts/render_assessment_report.py`, so do not change your score for it, and do not compute any weighted total yourself.
+- No override listed means this section does not apply and `overrides_applied` is `[]`.
+
 ## Evaluation Dimensions (8 Dimensions, 1–5 Each, 40 Points Total)
 
 ### D1: Knowledge Payoff (1–5) — The Make-or-Break Dimension

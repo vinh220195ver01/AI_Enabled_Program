@@ -30,7 +30,15 @@
       "applies_to_layers": ["L1", "L2"],
       "scorer_type": "rubric",
       "scorer_ref": "agents/manual-tc-quality-judge.md",
-      "description": "Blind rubric score (1-5 per dimension) for manual test-case craftsmanship: traceability, atomicity, clarity/reproducibility, coverage, expected-result precision. Use for skills whose job is writing manual test cases — for every other skill type, use rubric_quality_score (above) instead; correctness/format is graded separately by assertions via agents/grader.md."
+      "description": "Blind rubric score (1-5 per dimension) for manual test-case craftsmanship: traceability, atomicity, clarity/reproducibility, coverage, expected-result precision. Use for skills whose job is writing manual test cases when no filled profile exists (with a profile, use manual_qa_assessment_score) — for every other skill type, use rubric_quality_score (above) instead; correctness/format is graded separately by assertions via agents/grader.md."
+    },
+    {
+      "name": "manual_qa_assessment_score",
+      "axis": ["correctness", "quality"],
+      "applies_to_layers": ["L1", "L2"],
+      "scorer_type": "rubric",
+      "scorer_ref": "agents/manual-qa-assessment-judge.md",
+      "description": "Profile-driven manual-QA grading: correctness = coverage of baseline.json scenarios and verification points plus the criteria sheet's binary checks (graded as assertions); quality = weighted 1-5 score over the criteria sheet's rubric items. Use when a filled profiles/manual-qa exists; otherwise use manual_tc_quality_score. Never both for the same run. Criteria and baseline are data (profiles/manual-qa/*.json), so changing them needs no change to this entry or the judge."
     },
     {
       "name": "token_efficiency",

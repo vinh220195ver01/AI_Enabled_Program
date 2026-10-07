@@ -1,0 +1,19 @@
+{
+  "profile": "manual-qa",
+  "version": "0.2-skeleton",
+  "assessment_id": "TODO: id of the assessment handed to trainees",
+  "requirement_source": "TODO: path or name of the requirement/user story the trainees received",
+  "scenarios": [
+    {
+      "id": "S1",
+      "title": "TODO: scenario A, short title",
+      "category": "positive",
+      "description": "TODO: what this scenario must cover",
+      "required": true,
+      "critical": false,
+      "verification_points": [
+        {"id": "S1.V1", "expected": "TODO: exact observable outcome this scenario must verify", "required": true, "critical": false}
+      ]
+    }
+  ]
+}
