@@ -61,13 +61,11 @@ Quote the specific claim and the specific (or absent) implementation it's checke
 
 The conceptual background behind this rubric — what a Skill is, the Expert/Activation/Redundant content model the dimensions below apply — lives in `references/skill-design-primer.md`. It's split out on purpose: it's teaching material for someone writing a NEW skill, not part of the mechanism for scoring an existing one. **Do NOT load it as part of an L0 scoring pass** — the dimension tables below are self-sufficient for grading. Load it only if you (or the user) want the reasoning behind why the rubric is shaped this way, or a failure-pattern catalog for skill-authoring rather than skill-grading.
 
-## Profile overrides (only when `eval_plan.json` has `scope.assessment.l0_overrides`)
+## Profile override of L0 (only when `eval_plan.json` has `scope.assessment.l0_override`)
 
-A course profile may override specific dimensions (see `references/assessment-profiles.md`). Precedence: **the plan's override wins over the default text below, for exactly the dimensions it lists, and for nothing else.** Every other dimension is scored as written here. The override was pre-registered; you do not add, widen, or skip one yourself.
+A course profile may replace the generic rubric for L0 (see `references/assessment-profiles.md`). Precedence: **when the plan's `l0_override` has `mode: "replace"`, the profile's own criteria group replaces D1–D8 entirely, and D1–D8 are not scored.** The replacement criteria (for the manual-QA profile: A1–A8) are graded by the profile's own judge, `agents/manual-qa-assessment-judge.md`, not by the dimension tables below. Do not blend the two rubrics and do not report D1–D8 scores next to them: two scorings of the same skill under different rules would be read as one result.
 
-- `change: "anchors"`: score that dimension against the override's 1/3/5 anchors instead of the default table. Also score it once against the default table, and record both in `overrides_applied[]` (`dimension`, `default_score`, `final_score`). `dimensions.<dN>.score` holds the **final** (override) score.
-- `change: "weight"`: score the dimension normally. The weight is applied later by `scripts/render_assessment_report.py`, so do not change your score for it, and do not compute any weighted total yourself.
-- No override listed means this section does not apply and `overrides_applied` is `[]`.
+The override is pre-registered in the plan. You never add or widen one yourself. With no `l0_override` in the plan, this section does not apply and D1–D8 are scored as written.
 
 ## Evaluation Dimensions (8 Dimensions, 1–5 Each, 40 Points Total)
 

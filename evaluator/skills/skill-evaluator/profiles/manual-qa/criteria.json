@@ -1,44 +1,254 @@
 {
   "profile": "manual-qa",
-  "version": "0.2-skeleton",
-  "source": "TODO: name of the Excel file these rows were copied from",
-  "overall": {
-    "weights": {
-      "general_l0": "TODO: number >= 0, weight of the skill-evaluator D1-D8 score (after overrides)",
-      "rubric": "TODO: number >= 0, weight of the rubric criteria below",
-      "coverage": "TODO: number >= 0, weight of baseline scenario/verification-point coverage",
-      "checks": "TODO: number >= 0, weight of the binary check criteria below (0 if there are none)"
-    }
-  },
-  "l0_overrides": [
-    {
-      "dimension": "D3",
-      "change": "weight",
-      "weight": 2.0,
-      "reason": "TODO: why this course weights this L0 dimension differently. Delete this example entry if there are no overrides."
-    }
+  "version": "0.3-draft",
+  "source": "QA_AI_Skills_Assessment_Rubric_MANUAL.xlsx (sheet Rubric_Manual, in-progress), translated to English",
+  "pass_threshold": 70,
+  "groups": [
+    {"id": "A", "name": "Skill set", "max_points": 40, "layer": "L0"},
+    {"id": "B", "name": "Workflow coverage", "max_points": 30, "layer": "L1"},
+    {"id": "C", "name": "Output quality", "max_points": 30, "layer": "L1"}
   ],
+  "l0_override": {
+    "mode": "replace",
+    "group": "A",
+    "reason": "The course scores the skill set with its own criteria A1-A8, which replace the generic D1-D8."
+  },
   "criteria": [
     {
-      "id": "C01",
-      "name": "TODO: criterion name, e.g. Traceability",
-      "type": "rubric",
-      "weight": 1.0,
-      "gate_min": 2,
-      "description": "TODO: what this criterion measures, copied from the Excel row",
-      "anchors": {
-        "1": "TODO: what a score of 1 looks like",
-        "3": "TODO: what a score of 3 looks like",
-        "5": "TODO: what a score of 5 looks like"
-      },
-      "instant_low_flag": "TODO: a concrete pattern that caps this criterion at 1-2, or null"
+      "id": "A1",
+      "group": "A",
+      "name": "Structure",
+      "type": "deduction",
+      "pass_when": "Each skill is one kebab-case folder with a SKILL.md file of exactly that name",
+      "max_points": 4,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Pass when ALL skills satisfy:\n- Folder name: lowercase letters, digits and hyphens only (regex ^[a-z0-9]+(-[a-z0-9]+)*$), at most 64 characters\n- Exactly 1 file named exactly \"SKILL.md\" at the root of the skill folder\nFail when: the folder name has uppercase letters, spaces, \"_\" or Vietnamese diacritics; the file is named skill.md, SKILL.MD or SKILL.md.txt; SKILL.md sits in a subfolder",
+      "note": "Each error deducts 1 point"
     },
     {
-      "id": "C02",
-      "name": "TODO: a pass/fail criterion, e.g. Uses the mandated TC template",
-      "type": "check",
-      "critical": true,
-      "text": "TODO: one binary, literally-checkable statement about the output"
+      "id": "A2",
+      "group": "A",
+      "name": "Frontmatter",
+      "type": "deduction",
+      "pass_when": "Has name and description; name matches the folder name",
+      "max_points": 4,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Pass when:\n- SKILL.md starts with \"---\" on line 1, has a closing \"---\", and the YAML parses without error\n- Has \"name\", IDENTICAL to the folder name (case-sensitive)\n- Has a non-empty \"description\" of at most 1024 characters, containing no < or > characters\nFail when: the frontmatter or its closing \"---\" is missing; name is \"Test Case Generation\" but the folder is \"test-case-generation\"; the frontmatter is not on line 1\nNote: extra keys (license, metadata, ...) do not make it fail",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "A3",
+      "group": "A",
+      "name": "Description",
+      "type": "deduction",
+      "pass_when": "States clearly when to use the skill (\"Use when...\")",
+      "max_points": 6,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Pass when:\n- Has a trigger clause: \"Use when...\" / \"Use this skill when...\"\n- Names the concrete ACTIVITY + INPUT (e.g. \"reviewing a user story before designing test cases\")\n- Read on its own, the description does not overlap with another skill in the course\nFail when: it only says what the skill is (\"This skill generates test cases\"); the trigger clause is too generic (\"Use when testing\"); the trigger condition is only written in the SKILL.md body\nRecommended (no deduction): also state the output (e.g. \"exports as Excel\")",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "A4",
+      "group": "A",
+      "name": "Process",
+      "type": "deduction",
+      "pass_when": "Has numbered steps in order",
+      "max_points": 4,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Pass when:\n- SKILL.md has a heading Process / Workflow / Steps\n- Steps are numbered continuously from 1, with no skipped or repeated numbers, and at least 3 steps\n- Each step starts with an action verb (Extract, Identify, Export, ...)\nFail when: written as a paragraph or as unnumbered \"-\" bullets; numbers skipped or repeated (1,2,4); the process only lives in a references file\nNote: sub-steps (2a, 2b, bullets nested inside one step) are accepted",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "A5",
+      "group": "A",
+      "name": "File-opening instructions",
+      "type": "deduction",
+      "pass_when": "Every file in references/ and assets/ exists and says which step opens it",
+      "max_points": 6,
+      "penalty_per_error": 1,
+      "na_when": "N/A when: the skill has neither references/ nor assets/",
+      "details": "Pass when:\n- Every file in references/ and assets/ is mentioned in SKILL.md by relative path (e.g. references/tc-writing-rules.md)\n- Every path mentioned in SKILL.md exists (correct spelling, correct case)\n- Each file states which step opens it (\"Step N\"), or is mentioned inside the content of step N; that step number must exist in the Process\nFail when: an \"orphan\" file is never mentioned; a link is broken; only a generic \"see references folder\" is given; files are listed without saying which step\nN/A when: the skill has neither references/ nor assets/",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "A6",
+      "group": "A",
+      "name": "Files in the right place",
+      "type": "deduction",
+      "pass_when": "references/ holds rules/checklists; templates live in assets/",
+      "max_points": 4,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Pass when:\n- Skill folder root: only SKILL.md (LICENSE allowed)\n- references/: documents for Claude to READ (rules, checklists, guides, formats), .md/.txt\n- assets/: files to USE/COPY into the output (.xlsx/.docx templates, images)\n- scripts/: runnable code (.py/.sh)\n- No stray folders (docs/, templates/, ...), no lock files such as ~$*.xlsx, no output files already filled with data\nFail when: an Excel template sits in references/ or at the root; a checklist .md sits in assets/; a .py file sits in references/\nNote: sample code written INSIDE a references .md file is still accepted",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "A7",
+      "group": "A",
+      "name": "No domain knowledge",
+      "type": "deduction",
+      "pass_when": "No AUT name, URL, test account or project business rule in the skill",
+      "max_points": 7,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Scan scope: SKILL.md, references/, scripts/ AND the content inside assets/ (cells, hidden sheets, dropdowns of the template)\nFail when any of these appear:\n- A real AUT / product / customer name\n- A URL, domain, IP, or environment name (staging, UAT server, ...)\n- A test account, password, token or API key\n- A project business rule written as a rule (e.g. \"a cart holds at most 20 items\")\n- A fixed project list: modules, screens, known issues, ticket IDs\nAllowed: general QA principles; the team's generic template format; illustrative examples marked \"e.g.\"; placeholders such as <AUT name>\nTest: \"If I used this skill on a different project, would this sentence still be true?\" If not, it fails",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "A8",
+      "group": "A",
+      "name": "No overlap",
+      "type": "deduction",
+      "pass_when": "No two skills have descriptions covering the same scope (N/A when there is only 1 skill)",
+      "max_points": 5,
+      "penalty_per_error": 1,
+      "na_when": "N/A when: there is only 1 skill",
+      "details": "N/A when: there is only 1 skill\nHow to check: compare the descriptions pair by pair; for each skill write one typical request and see whether it also matches the other skill's description\nA pair passes when:\n- The ACTIVITY or the INPUT differs; or\n- If the input is the same, the description states a boundary (e.g. \"before designing test cases\", \"from the output of ...\", \"Do NOT use for ...\")\nFail when: two descriptions are near-paraphrases of each other; one description swallows the other (\"Use for any QA task\")",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "B1",
+      "group": "B",
+      "name": "Clarification questions",
+      "type": "deduction",
+      "pass_when": "An output exists, and the chat evidence shows the skill produced it",
+      "max_points": 6,
+      "penalty_per_error": 2,
+      "na_when": null,
+      "details": "Pass when BOTH hold:\n1. Output exists: the Markdown analysis in the chat has a \"Clarification questions\" section split into 2 groups, \"Must ask\" and \"Nice to confirm\", each with at least 1 question (a group with no question must say \"None\" with a reason)\n2. Evidence the skill produced it: the transcript shows the test-requirements-analysis skill being invoked (skill name in a tool call, or Claude reading that skill's SKILL.md), and the questions appear in Claude's answer RIGHT AFTER that invocation, in the same chat\nFail when: only a screenshot or text file of the questions is submitted, with no transcript; the questions were typed into the chat by the trainee; the questions are not split into Must ask / Nice to confirm; the transcript is cut and the skill-invocation part is missing",
+      "note": "Each error deducts 2 points"
+    },
+    {
+      "id": "B2",
+      "group": "B",
+      "name": "TR list",
+      "type": "deduction",
+      "pass_when": "A TR file exists, and the evidence shows the skill produced it",
+      "max_points": 8,
+      "penalty_per_error": 2,
+      "na_when": null,
+      "details": "Pass when ALL 3 hold:\n1. An .xlsx file exists with a sheet \"Test Requirement\" and the columns: AC ID | Acceptance Criteria | TR ID | Test Requirements | Notes, with at least 1 data row\n2. The transcript shows the test-requirements-analysis skill being invoked, and the same chat contains the Python code that creates the file (file name in the code = submitted file name)\n3. The file was created by copying the template from assets/ (keeping the title \"Requirements Traceability Matrix\", styles and column widths), not rebuilt from scratch\nFail when: no transcript; the submitted file name does not match the file created in the chat; columns are missing or the sheet name is wrong; the file was made by hand by the trainee\nNote: hand edits after the skill created the file are allowed (graded under critical thinking), but the structure must be kept and the trainee must record what they changed",
+      "note": "Each error deducts 2 points"
+    },
+    {
+      "id": "B3",
+      "group": "B",
+      "name": "TC list",
+      "type": "deduction",
+      "pass_when": "A TC file exists, and the evidence shows the skill produced it",
+      "max_points": 8,
+      "penalty_per_error": 2,
+      "na_when": null,
+      "details": "Pass when ALL 4 hold:\n1. An .xlsx file exists with a sheet \"TC List\" and the columns: TR ID | TC ID | TC Summary | Pre-Condition | Steps | Expected Result | Notes, with at least 1 data row\n2. The transcript shows the test-case-generation skill being invoked, and the same chat contains the Python code that creates the file (file name in the code = submitted file name)\n3. The file was created by copying the template from assets/ (keeping the title \"Test Case List\", styles and column widths)\n4. The workflow chains: every TR ID value in the TC file exists in the TR file submitted for B2 (proving the TC file was generated from the TR file, not run independently)\nFail when: no transcript; file name mismatch; columns missing or wrong sheet name; a TR ID in the TC file is not in the TR file\nNote: hand edits after the skill created the file are allowed if the structure is kept and the trainee records what they changed",
+      "note": "Each error deducts 2 points"
+    },
+    {
+      "id": "B4",
+      "group": "B",
+      "name": "Bug report",
+      "type": "deduction",
+      "pass_when": "A bug report exists, and the evidence shows the skill produced it",
+      "max_points": 8,
+      "penalty_per_error": 2,
+      "na_when": null,
+      "details": "Pass when ALL 3 hold:\n1. The chat has a Markdown analysis with all 5 sections: Evidence Reviewed | Error Patterns & Root Cause Hypotheses | Facts vs. Assumptions vs. Hypotheses | Impact, Severity & Priority Assessment | Missing Information & Recommended Next Investigation\n2. An .xlsx file exists with a sheet \"Bug List\" and all 14 columns: ID | Summary | Description | Pre-Condition | Steps to Reproduce | Screenshot | Build found | Reproducibility | Severity | Frequency | Priority | Keyword | Status | Note, with at least 1 bug, and the dropdowns kept from the template\n3. The transcript shows the defect-analysis-reporting skill being invoked, with the original evidence (screenshot/log) uploaded, and the same chat contains the Python code that creates the file (file name matches)\nFail when: one of the 2 outputs (Markdown or Excel) is missing; a section is missing; no transcript; the file was not created from the template; the original evidence in the chat differs from the evidence the trainee submitted",
+      "note": "Each error deducts 2 points"
+    },
+    {
+      "id": "C1",
+      "group": "C",
+      "name": "Clarification questions",
+      "type": "deduction",
+      "pass_when": "Identifies the ambiguous points in the answer key; splits \"Must ask\" and \"Nice to confirm\"",
+      "max_points": 3,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Compare against: the list of ambiguous points in the answer key\nMatching rule: a question matches if it asks about exactly that ambiguous point, wording need not match; a question that combines several points counts for each point\nPass when ALL hold:\n- At least 70% of all ambiguous points are found\n- Every Mandatory ambiguous point the trainee found sits in \"Must ask\", not in \"Nice to confirm\"\n- Both groups \"Must ask\" and \"Nice to confirm\" are present\nFail when: a Mandatory ambiguous point is missed; a Mandatory ambiguous point is placed in \"Nice to confirm\"; a question is generic and names no ambiguous point (\"Is there anything else required?\")\nNote: a sensible question that is not in the answer key is not penalised; record it so the answer key can be updated",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "C2",
+      "group": "C",
+      "name": "TR list",
+      "type": "deduction",
+      "pass_when": "Every ambiguous point or edge case in the answer key has a TR row; each TR traces to an AC or N/A",
+      "max_points": 4,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Compare against: the ACs in the user story + the ambiguous points in the answer key\nPass when ALL hold:\n- Every AC in the user story has at least 1 TR row\n- At least 70% of all ambiguous points have a matching TR row\n- 100% of TR rows have a correct AC ID (that AC really exists in the user story) or say \"N/A\"; N/A rows must have Notes naming the origin (Edge case / Risk / Assumption / Missing info)\nFail when: an AC has no TR; a Mandatory ambiguous point has no TR; a TR cites an AC ID that does not exist; an edge case is attached to an unrelated AC instead of being marked N/A",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "C3",
+      "group": "C",
+      "name": "TC coverage",
+      "type": "deduction",
+      "pass_when": "Every TR has at least 1 TC; edge cases have their own TC",
+      "max_points": 4,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Compare against: the trainee's own TR file + the edge cases in the answer key\nPass when ALL hold:\n- Every TR ID in the TR file appears at least once in the TR ID column of the TC file (check each ID)\n- Every TR row whose Notes say \"Edge case\" has at least 1 dedicated TC, i.e. a TC Summary aimed at exactly that edge case, not merged into a happy-path TC\n- Every Mandatory edge case in the answer key has at least 1 TC testing it\nFail when: a TR has no TC; an edge case is only mentioned inside another TC; a TR is marked BLOCKED with no accompanying TC and no stated reason\nNote: a TR marked BLOCKED may have a TC carrying a BLOCKED flag, which still counts as covered",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "C4",
+      "group": "C",
+      "name": "TC quality",
+      "type": "deduction",
+      "pass_when": "Expected Result is specific, never \"works correctly\"",
+      "max_points": 5,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Compare against: the whole Expected Result column (if more than 50 TCs: check all edge-case TCs plus a random 20 of the rest)\nAn Expected Result is specific when it states at least 1 observable thing: message content, displayed value, screen navigated to, field/button state, data saved or not saved\nPhrases forbidden when standing alone: \"works correctly/properly/as expected\", \"displayed correctly\", \"no error\", \"success\", \"OK\"\nPass when: 0 Expected Results violate this, and Steps contain concrete test data (not a generic \"enter valid data\")\nFail when: at least 1 Expected Result violates this. Record the TC ID with a quote, one error per violating Expected Result",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "C5",
+      "group": "C",
+      "name": "Bug finding",
+      "type": "deduction",
+      "pass_when": "Finds at least N bugs from the answer key's bug list",
+      "max_points": 3,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Compare against: the planted bug list in the answer key (BUG-xx), each with a severity label\nMatching rule: a trainee bug matches a BUG-xx if it has the right location and the right symptom; several reports of the same cause count once\nN = 60% of all BUG-xx rounded up (baseline.thresholds.bug_found_pct), e.g. 5 bugs gives N = 3\nPass when ALL hold:\n- At least N matching bugs found\n- 100% of the Critical/Major bugs found\nFail when: fewer than N matching bugs, or a Critical/Major bug is missed\nNote: a bug outside the answer key that the grader confirms is real is recorded but does not count toward N; a bug that cannot be reproduced or is correct behaviour per the spec is recorded in grading_notes as a false positive",
+      "note": "Each error deducts 1 point"
+    },
+    {
+      "id": "C6",
+      "group": "C",
+      "name": "Bug report",
+      "type": "deduction",
+      "pass_when": "Each bug has steps, expected/observed, severity and priority with reasons; no invented environment information",
+      "max_points": 5,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Compare against: every bug in the Bug List file + the exam document (the list of environment information the exam provides)\nPass when EACH bug satisfies:\n- Steps to Reproduce: numbered, start from a clear initial state, someone else can follow them\n- Has both an Expected Result and an Observed Result, and the two differ\n- Severity and Priority come from the dropdown values, each with its own reason (in Note or in the Markdown \"Impact, Severity & Priority\")\n- Build found / browser / OS: filled in only if the exam provides it; if not, left empty with \"not provided\" in Note\nFail when: a bug lacks steps / expected / observed; Severity or Priority has no reason; environment information that is not in the exam is filled in (invented)\nSeverity deviating by more than 1 level from the answer key is NOT an error here: it is an advisory flag (C6-severity) that a human decides",
+      "note": "Each error deducts 1 point",
+      "advisory": [
+        {
+          "id": "C6-severity",
+          "text": "A bug's severity deviates by more than 1 level from the answer key's severity (per baseline.severity_scale)",
+          "decision": "human",
+          "note": "The agent only records the flag with the bug ID, the trainee's severity and the key's severity. A human decides pass/fail; until then it costs no points and the report is provisional."
+        }
+      ]
+    },
+    {
+      "id": "C7",
+      "group": "C",
+      "name": "No fabrication",
+      "type": "deduction",
+      "pass_when": "No rule is presented as a requirement when the user story does not state it",
+      "max_points": 6,
+      "penalty_per_error": 1,
+      "na_when": null,
+      "details": "Compare against: the verbatim user story / ACs of the exam + the Notes of TR/TC\nHow to check: list every concrete rule appearing in the TR, Expected Results and Steps (limits, lengths, formats, error message content, permissions, processing order), then look for each one in the user story\nPass when: every rule NOT in the user story is marked \"Assumption —\" or \"BLOCKED —\", or is put into a clarification question\nFail when: at least 1 rule that is not in the user story is written as a confirmed requirement\nFailing example: the user story says nothing about password length, but a TC states Expected \"Shows error 'Password must be 8-20 characters'\" with no Assumption flag",
+      "note": "Each error deducts 1 point"
     }
   ]
 }

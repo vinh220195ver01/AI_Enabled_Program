@@ -38,7 +38,7 @@
       "applies_to_layers": ["L1", "L2"],
       "scorer_type": "rubric",
       "scorer_ref": "agents/manual-qa-assessment-judge.md",
-      "description": "Profile-driven manual-QA grading: correctness = coverage of baseline.json scenarios and verification points plus the criteria sheet's binary checks (graded as assertions); quality = weighted 1-5 score over the criteria sheet's rubric items. Use when a filled profiles/manual-qa exists; otherwise use manual_tc_quality_score. Never both for the same run. Criteria and baseline are data (profiles/manual-qa/*.json), so changing them needs no change to this entry or the judge."
+      "description": "Profile-driven manual-QA grading: the judge counts errors per criterion (groups A skill set, B workflow provenance, C quality vs answer key); scripts/render_assessment_report.py converts them to points (max_points minus penalty_per_error x errors) and a pass/fail at the profile threshold. Advisory flags wait for a human decision. Use when a filled profiles/manual-qa exists; otherwise use manual_tc_quality_score. Never both for the same run. Criteria and baseline are data (profiles/manual-qa/*.json), so changing them needs no change to this entry or the judge."
     },
     {
       "name": "token_efficiency",
