@@ -217,8 +217,13 @@ def main():
     verdict = "PASS" if total >= asm["pass_threshold"] else "FAIL"
     status = "provisional" if pending else "final"
 
+    na_list = asm.get("not_assessed", [])
+    if na_list:
+        notes.append("Not assessed in this exam: " + "; ".join(f"{x['criterion']} ({x['reason']})" for x in na_list)
+                     + f". Pass line scaled from {asm.get('pass_threshold_original')}/{asm.get('full_total')} to {asm['pass_threshold']}/{max_total}.")
+
     report = {"status": status, "verdict": verdict, "total": total, "max_total": max_total,
-              "pass_threshold": asm["pass_threshold"], "groups": group_rows, "criteria": rows,
+              "pass_threshold": asm["pass_threshold"], "not_assessed": na_list, "groups": group_rows, "criteria": rows,
               "pending_human_flags": pending, "criteria_sha256": asm["criteria_sha256"],
               "baseline_sha256": asm["baseline_sha256"], "notes": notes}
     a.out_dir.mkdir(parents=True, exist_ok=True)

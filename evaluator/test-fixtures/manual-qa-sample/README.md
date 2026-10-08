@@ -5,7 +5,7 @@ A made-up trainee submission with **planted flaws**, to exercise `skill-evaluato
 | Path | What it is |
 |---|---|
 | `exam/user-story.md` | The exam the trainee received (login, 4 ACs, build and browser given, no OS) |
-| `baseline.json` | The sample answer key (5 ambiguities, 3 edge cases, 5 planted bugs). Not the real profile baseline. |
+| `baseline.json` | The sample answer key (5 ambiguities, 3 edge cases, 5 planted bugs). It is the per-exam answer key and sits next to `exam/`, as a real one would. |
 | `submission/skills/` | The trainee's final skill set (group A is graded on this) |
 | `submission/chat-transcript.md` | The trainee's chat (group B provenance; its first outputs are L1) |
 | `submission/outputs/` | The submitted `tr-list.xlsx`, `tc-list.xlsx`, `bug-list.xlsx` |

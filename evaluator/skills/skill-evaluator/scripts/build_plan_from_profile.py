@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Turns a filled-in assessment profile (profiles/<name>/criteria.json + baseline.json)
-into the pre-registered evals/eval_plan.json (SKILL.md Step 1).
+Turns a profile's criteria (profiles/<name>/criteria.json) plus ONE assessment's answer key
+(--baseline PATH, different for every exam) into the pre-registered evals/eval_plan.json
+(SKILL.md Step 1).
 
 Scoring model of a profile: every criterion is `deduction` type -- it has
 max_points and penalty_per_error; its score is max_points minus penalty x errors,
@@ -22,12 +23,13 @@ Usage:
     python scripts/build_plan_from_profile.py profiles/manual-qa \
         --skill-name trainee-01 --hypothesis "..." --out evals/eval_plan.json
 
---baseline PATH uses a different answer key (e.g. a test fixture) together with the
-profile's own criteria.json.
+--baseline is required. The answer key belongs to one assessment and lives next to its
+exam, not in the profile folder; profiles/<name>/baseline.template.json shows its shape.
 """
 import argparse
 import hashlib
 import json
+import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -93,10 +95,25 @@ def validate(criteria, baseline):
     if ov and (ov.get("mode") != "replace" or ov.get("group") not in groups or not ov.get("reason")):
         problems.append("criteria.json: l0_override needs mode 'replace', a declared group, and a reason")
 
+    na = baseline.get("not_assessed", [])
+    crit_ids = {c.get("id") for c in criteria.get("criteria", [])}
+    na_ids = {x.get("criterion") for x in na}
+    for x in na:
+        if x.get("criterion") not in crit_ids:
+            problems.append(f"baseline.json: not_assessed names unknown criterion {x.get('criterion')!r}")
+        if not x.get("reason"):
+            problems.append(f"baseline.json: not_assessed {x.get('criterion')} needs a reason")
+    if na_ids >= crit_ids:
+        problems.append("baseline.json: not_assessed removes every criterion")
+    # a list is only required when an assessed criterion needs it
+    needed = {"acceptance_criteria", "ambiguities", "edge_cases"}
+    for c in criteria.get("criteria", []):
+        if c.get("id") not in na_ids:
+            needed |= set(c.get("needs", []))
     for key in ("acceptance_criteria", "ambiguities", "edge_cases", "bugs"):
         problems += dup_ids(baseline.get(key, []), f"baseline.json {key}")
-        if not baseline.get(key):
-            problems.append(f"baseline.json: {key} is empty")
+        if key in needed and not baseline.get(key):
+            problems.append(f"baseline.json: {key} is empty (needed by an assessed criterion; list the criterion under not_assessed if the exam does not cover it)")
     scale = baseline.get("severity_scale", [])
     if not scale:
         problems.append("baseline.json: severity_scale is empty")
@@ -121,21 +138,32 @@ def main():
     ap.add_argument("--hypothesis", required=True)
     ap.add_argument("--has-refinement", action="store_true",
                     help="trainee submitted a refined version (real L2)")
-    ap.add_argument("--baseline", type=Path, help="answer key to use instead of <profile_dir>/baseline.json")
+    ap.add_argument("--baseline", type=Path, required=True, help="this assessment's answer key (baseline.json)")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
 
     cpath = args.profile_dir / "criteria.json"
-    bpath = args.baseline or args.profile_dir / "baseline.json"
+    bpath = args.baseline
     criteria = json.loads(cpath.read_text(encoding="utf-8"))
     baseline = json.loads(bpath.read_text(encoding="utf-8"))
 
     problems = validate(criteria, baseline)
+    if baseline.get("profile") != args.profile_dir.name:
+        problems.append(f"baseline.json: profile is {baseline.get('profile')!r}, expected {args.profile_dir.name!r}")
     if problems:
         print(f"build_plan_from_profile: {len(problems)} problem(s), nothing written:\n")
         for p in problems:
             print(f"  - {p}")
         return 1
+
+    na_ids = {x["criterion"] for x in baseline.get("not_assessed", [])}
+    full_total = sum(g["max_points"] for g in criteria["groups"])
+    assessed = [c for c in criteria["criteria"] if c["id"] not in na_ids]
+    groups = [{**g, "max_points": sum(c["max_points"] for c in assessed if c["group"] == g["id"])} for g in criteria["groups"]]
+    assessed_total = sum(g["max_points"] for g in groups)
+    # Assumption, flagged in the report: when criteria are not assessed, the pass line keeps the
+    # same proportion of the points that remain (rounded up).
+    threshold = math.ceil(criteria["pass_threshold"] * assessed_total / full_total) if na_ids else criteria["pass_threshold"]
 
     layers = ["L0", "L1"] + (["L2", "L3"] if args.has_refinement else [])
     plan = {
@@ -155,15 +183,18 @@ def main():
                 "baseline_version": baseline.get("version"),
                 "criteria_sha256": sha256(cpath),
                 "baseline_sha256": sha256(bpath),
-                "pass_threshold": criteria["pass_threshold"],
-                "groups": criteria["groups"],
+                "pass_threshold": threshold,
+                "pass_threshold_original": criteria["pass_threshold"],
+                "full_total": full_total,
+                "not_assessed": baseline.get("not_assessed", []),
+                "groups": groups,
                 "l0_override": criteria.get("l0_override"),
-                "criteria": criteria["criteria"],
+                "criteria": assessed,
             },
         },
         "baseline": {
             "type": "assessment_baseline",
-            "reference": f"profiles/{args.profile_dir.name}/baseline.json assessment "
+            "reference": f"{args.baseline} assessment "
                          f"{baseline['assessment_id']} v{baseline.get('version')}",
         },
         "evals": [{
@@ -173,15 +204,16 @@ def main():
             "files": [baseline["requirement_source"]],
             "assertions": [
                 {"id": c["id"], "text": f"{c['name']}: {c['pass_when']}", "pre_registered": True}
-                for c in criteria["criteria"]
+                for c in assessed
             ],
             "exploratory_assertions": [],
         }],
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
-    total = sum(g["max_points"] for g in criteria["groups"])
-    print(f"Wrote {args.out}: {len(criteria['criteria'])} criteria, {total} points, pass at {criteria['pass_threshold']}")
+    print(f"Wrote {args.out}: {len(assessed)} criteria, {assessed_total} points, pass at {threshold}")
+    if na_ids:
+        print(f"  not assessed: {sorted(na_ids)}; pass line scaled from {criteria['pass_threshold']}/{full_total} to {threshold}/{assessed_total}")
     return 0
 
 

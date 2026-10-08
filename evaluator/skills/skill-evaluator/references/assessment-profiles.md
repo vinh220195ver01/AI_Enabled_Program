@@ -9,9 +9,31 @@ Only `manual-qa` exists today. A new area is a new folder under `profiles/` with
 | File | Holds | Filled from |
 |---|---|---|
 | `profiles/<name>/criteria.json` | Groups (A/B/C), the criteria in them, the pass threshold, and the L0 override | The course's rubric Excel (currently `QA_AI_Skills_Assessment_Rubric_MANUAL.xlsx`, in progress) |
-| `profiles/<name>/baseline.json` | The answer key: acceptance criteria, ambiguities (mandatory or not), edge cases, planted bugs with severity, `severity_scale`, the percentage thresholds the criteria refer to, and the environment info the exam provided | The assessment author |
+| `<assessment>/baseline.json` (one per exam, passed with `--baseline`) | The answer key: acceptance criteria, ambiguities (mandatory or not), edge cases, planted bugs with severity, `severity_scale`, the percentage thresholds the criteria refer to, and the environment info the exam provided | The assessment author |
 
-`criteria.json` is reused across assessments; `baseline.json` belongs to one assessment. Both carry a `version`. `baseline.json` ships as a skeleton full of `TODO`; `scripts/build_plan_from_profile.py` refuses to run while any `TODO` remains.
+`criteria.json` is reused across assessments and lives in the profile. `baseline.json` belongs to **one assessment**: it is loaded together with that exam, kept next to it but never given to trainees, and passed to the script with `--baseline`. The profile only ships `baseline.template.json`, a skeleton full of `TODO` that shows the shape; copy it per exam and fill it in. `scripts/build_plan_from_profile.py` refuses to run while any `TODO` remains, and when the answer key's `profile` field names another profile. Both files carry a `version`.
+
+## Answer key from the trainer's workbooks
+
+The trainer supplies the answer key as Excel (the same layout trainees fill in), not as JSON. `scripts/import_baseline_xlsx.py` reads it and writes `<assessment>/baseline.json`:
+
+```
+python scripts/import_baseline_xlsx.py --tr Test_Requirement.xlsx --bug Bug_Report.xlsx [--tc Test_Case.xlsx]     --assessment-id <id> --requirement-source <exam file> [--build V --browser B --os O] --out <assessment>/baseline.json
+```
+
+| Baseline field | Read from |
+|---|---|
+| `acceptance_criteria` | unique AC ID + Acceptance Criteria pairs in the TR sheet (`N/A` rows skipped) |
+| `ambiguities` | TR rows whose Notes start with `Missing info`; `Must ask` = mandatory, `Nice to confirm` = not |
+| `edge_cases` | TR rows whose Notes start with `Edge case`; mandatory per an optional `Mandatory` column (Yes/No), else the `--edge-case-default` (mandatory) |
+| `bugs`, `severity_scale` | Bug sheet rows; the scale is the Severity dropdown, highest first |
+| `environment_info_provided` | not in the workbooks: pass `--build/--browser/--os`, otherwise null |
+
+Rules of the importer: it never fabricates silently. Every default and every unclassifiable row goes into `import_notes` in the output and is printed, so read them before pre-registering. It fails with a plain message (nothing written) when a file is missing, is not an `.xlsx`, lacks the expected headers, or a bug severity is outside the dropdown. The Test Case workbook is only recorded as a reference file for the judge; its rows are not copied. Source workbooks are recorded with sha256 under `source_files`. `baseline.json` stays the single file passed to `build_plan_from_profile.py --baseline`, which hashes it into the plan.
+
+**An exam without a bug-report competency:** omit `--bug`. The importer then lists `B4`, `C5`, `C6` under `not_assessed` in `baseline.json` (each with a reason) and leaves `bugs` empty. `build_plan_from_profile.py` drops those criteria from the plan, so the judge never grades them, and shrinks the totals accordingly. **The pass line is scaled in the same proportion and rounded up** (70 of 100 becomes 59 of 84 when 16 points are not assessed). That scaling is the framework's assumption, not a rule of the rubric; the plan keeps the original threshold next to the scaled one, and the report lists what was not assessed. Criteria that need the bug list say so with `needs: ["bugs"]` in `criteria.json`; an exam that does assess them must supply bugs.
+
+Review `baseline.json` once after importing: the trainer, not the importer, decides which edge cases are mandatory.
 
 ## Scoring model
 
@@ -50,8 +72,8 @@ and passes it with `--human`. `fail` adds `errors` (default 1) to C6; `pass` add
 
 ## Wiring it into a run
 
-1. Fill the answer key in `baseline.json`; revise `criteria.json` if the rubric changed (edit the JSON; the Excel import was a one-off).
-2. Pre-register: `python scripts/build_plan_from_profile.py profiles/manual-qa --skill-name <trainee> --hypothesis "<text>" [--has-refinement] --out evals/eval_plan.json`. The plan stores sha256 of both profile files, so a later edit is detectable.
+1. Import the trainer's baseline workbooks into `<assessment>/baseline.json` (see "Answer key from the trainer's workbooks"), or copy `baseline.template.json` and fill it in by hand; revise `criteria.json` if the rubric changed (edit the JSON; the Excel import was a one-off).
+2. Pre-register: `python scripts/build_plan_from_profile.py profiles/manual-qa --baseline <assessment>/baseline.json --skill-name <trainee> --hypothesis "<text>" [--has-refinement] --out evals/eval_plan.json`. The plan stores sha256 of both profile files, so a later edit is detectable.
 3. Grade with `agents/manual-qa-assessment-judge.md` → `assessment_result.json`.
 4. Report: `python scripts/render_assessment_report.py --plan evals/eval_plan.json --result <path> --out-dir report/ [--human decisions.json] [--submission-dir <submission root>]`. It writes `assessment_scoring_sheet.xlsx`, `assessment_report.md` and `assessment_report.json`.
 

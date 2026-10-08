@@ -149,6 +149,7 @@
     {
       "id": "B4",
       "group": "B",
+      "needs": ["bugs"],
       "name": "Bug report",
       "type": "deduction",
       "pass_when": "A bug report exists, and the evidence shows the skill produced it",
@@ -209,6 +210,7 @@
     {
       "id": "C5",
       "group": "C",
+      "needs": ["bugs"],
       "name": "Bug finding",
       "type": "deduction",
       "pass_when": "Finds at least N bugs from the answer key's bug list",
@@ -221,6 +223,7 @@
     {
       "id": "C6",
       "group": "C",
+      "needs": ["bugs"],
       "name": "Bug report",
       "type": "deduction",
       "pass_when": "Each bug has steps, expected/observed, severity and priority with reasons; no invented environment information",
