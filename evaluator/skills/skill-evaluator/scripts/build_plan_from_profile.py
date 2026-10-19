@@ -16,8 +16,10 @@ What it checks before writing anything:
   - pass_threshold <= total of all max_points
   - baseline: unique ids, bug severities inside severity_scale, thresholds present
 
-It records sha256 of both profile files in the plan, so a later edit to the
-criteria or the answer key after grading started is detectable.
+The profile is read with profile_loader.load_profile, which resolves shared criteria
+fragments (`$ref` in groups, e.g. profiles/_shared/skill-standard.json). It records sha256
+of criteria.json, of every shared fragment and of the answer key in the plan, so a later
+edit to any of them after grading started is detectable.
 
 Usage:
     python scripts/build_plan_from_profile.py profiles/manual-qa \
@@ -33,6 +35,8 @@ import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+from profile_loader import ProfileError, load_profile
 
 REQUIRED_THRESHOLDS = {"ambiguity_found_pct", "ambiguity_with_tr_pct", "bug_found_pct"}
 
@@ -59,6 +63,10 @@ def dup_ids(items, label):
 
 def validate(criteria, baseline):
     problems = []
+    model = criteria.get("scoring_model", "deduction")
+    if model != "deduction":
+        return [f"criteria.json: scoring_model {model!r} is not supported yet; this script only builds "
+                f"plans for the 'deduction' points model ({criteria.get('status', 'no status given')})"]
     for label, doc in (("criteria.json", criteria), ("baseline.json", baseline)):
         problems += [f"{label}: unfilled TODO at {p}" for p in walk_todos(doc)]
 
@@ -144,7 +152,13 @@ def main():
 
     cpath = args.profile_dir / "criteria.json"
     bpath = args.baseline
-    criteria = json.loads(cpath.read_text(encoding="utf-8"))
+    try:
+        criteria, sources = load_profile(args.profile_dir)
+    except ProfileError as e:
+        print(f"build_plan_from_profile: {len(e.problems)} problem(s), nothing written:\n")
+        for p in e.problems:
+            print(f"  - {p}")
+        return 1
     baseline = json.loads(bpath.read_text(encoding="utf-8"))
 
     problems = validate(criteria, baseline)
@@ -182,6 +196,7 @@ def main():
                 "criteria_version": criteria.get("version"),
                 "baseline_version": baseline.get("version"),
                 "criteria_sha256": sha256(cpath),
+                "shared_sources": sources[1:],
                 "baseline_sha256": sha256(bpath),
                 "pass_threshold": threshold,
                 "pass_threshold_original": criteria["pass_threshold"],

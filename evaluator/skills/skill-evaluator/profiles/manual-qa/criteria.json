@@ -1,257 +1,300 @@
 {
   "profile": "manual-qa",
-  "version": "0.3-draft",
-  "source": "QA_AI_Skills_Assessment_Rubric_MANUAL.xlsx (sheet Rubric_Manual, in-progress), translated to English",
-  "pass_threshold": 70,
-  "groups": [
-    {"id": "A", "name": "Skill set", "max_points": 40, "layer": "L0"},
-    {"id": "B", "name": "Workflow coverage", "max_points": 30, "layer": "L1"},
-    {"id": "C", "name": "Output quality", "max_points": 30, "layer": "L1"}
+  "version": "0.10-draft",
+  "scoring_model": "weighted-pass-fail",
+  "status": "criteria loaded, not runnable: the pass/fail-to-score mapping and the pass threshold are undecided, whether the bug report is graded is open; the safety gate has no conditions yet",
+  "extends": [
+    "../_shared/course-rules.json"
   ],
-  "l0_override": {
-    "mode": "replace",
-    "group": "A",
-    "reason": "The course scores the skill set with its own criteria A1-A8, which replace the generic D1-D8."
-  },
+  "competencies": [
+    "requirements-analysis",
+    "test-design",
+    "test-case-generation",
+    "test-data-generation"
+  ],
+  "groups": [
+    {
+      "$ref": "../_shared/skill-standard.json"
+    },
+    {
+      "id": "B",
+      "no": 2,
+      "section": "For Competence",
+      "name": "AI Application & Enablement",
+      "weight": 0.5,
+      "objective": "Evaluate the trainee's ability to operationalize AI for QA tasks by decomposing tasks, providing relevant context and knowledge, configuring reusable skills, handling exceptions, and selecting appropriate tools or workflows to achieve effective and repeatable execution."
+    },
+    {
+      "id": "C",
+      "no": 3,
+      "section": "For Competence",
+      "name": "QA Output Quality",
+      "weight": 0.3,
+      "objective": "Evaluate whether the final AI-assisted deliverables meet competency-specific QA requirements for accuracy, completeness, and usability, and whether the trainee effectively validates AI-generated results, identifies errors and gaps, and makes necessary corrections before accepting the output."
+    }
+  ],
+  "gates": [
+    {
+      "id": "SAFE",
+      "no": 4,
+      "section": "For Course",
+      "name": "AI Safety & Responsible Use",
+      "weight": 0,
+      "type": "mandatory pass/fail gate",
+      "objective": "Ensure the trainee uses approved AI tools responsibly, protects confidential and sensitive information, complies with company policies and data-handling requirements, and validates AI-generated content before use.",
+      "pass_when_all": null,
+      "fail_when_any": null,
+      "status": "conditions not defined yet"
+    }
+  ],
   "criteria": [
-    {
-      "id": "A1",
-      "group": "A",
-      "name": "Structure",
-      "type": "deduction",
-      "pass_when": "Each skill is one kebab-case folder with a SKILL.md file of exactly that name",
-      "max_points": 4,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Pass when ALL skills satisfy:\n- Folder name: lowercase letters, digits and hyphens only (regex ^[a-z0-9]+(-[a-z0-9]+)*$), at most 64 characters\n- Exactly 1 file named exactly \"SKILL.md\" at the root of the skill folder\nFail when: the folder name has uppercase letters, spaces, \"_\" or Vietnamese diacritics; the file is named skill.md, SKILL.MD or SKILL.md.txt; SKILL.md sits in a subfolder",
-      "note": "Each error deducts 1 point"
-    },
-    {
-      "id": "A2",
-      "group": "A",
-      "name": "Frontmatter",
-      "type": "deduction",
-      "pass_when": "Has name and description; name matches the folder name",
-      "max_points": 4,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Pass when:\n- SKILL.md starts with \"---\" on line 1, has a closing \"---\", and the YAML parses without error\n- Has \"name\", IDENTICAL to the folder name (case-sensitive)\n- Has a non-empty \"description\" of at most 1024 characters, containing no < or > characters\nFail when: the frontmatter or its closing \"---\" is missing; name is \"Test Case Generation\" but the folder is \"test-case-generation\"; the frontmatter is not on line 1\nNote: extra keys (license, metadata, ...) do not make it fail",
-      "note": "Each error deducts 1 point"
-    },
-    {
-      "id": "A3",
-      "group": "A",
-      "name": "Description",
-      "type": "deduction",
-      "pass_when": "States clearly when to use the skill (\"Use when...\")",
-      "max_points": 6,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Pass when:\n- Has a trigger clause: \"Use when...\" / \"Use this skill when...\"\n- Names the concrete ACTIVITY + INPUT (e.g. \"reviewing a user story before designing test cases\")\n- Read on its own, the description does not overlap with another skill in the course\nFail when: it only says what the skill is (\"This skill generates test cases\"); the trigger clause is too generic (\"Use when testing\"); the trigger condition is only written in the SKILL.md body\nRecommended (no deduction): also state the output (e.g. \"exports as Excel\")",
-      "note": "Each error deducts 1 point"
-    },
-    {
-      "id": "A4",
-      "group": "A",
-      "name": "Process",
-      "type": "deduction",
-      "pass_when": "Has numbered steps in order",
-      "max_points": 4,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Pass when:\n- SKILL.md has a heading Process / Workflow / Steps\n- Steps are numbered continuously from 1, with no skipped or repeated numbers, and at least 3 steps\n- Each step starts with an action verb (Extract, Identify, Export, ...)\nFail when: written as a paragraph or as unnumbered \"-\" bullets; numbers skipped or repeated (1,2,4); the process only lives in a references file\nNote: sub-steps (2a, 2b, bullets nested inside one step) are accepted",
-      "note": "Each error deducts 1 point"
-    },
-    {
-      "id": "A5",
-      "group": "A",
-      "name": "File-opening instructions",
-      "type": "deduction",
-      "pass_when": "Every file in references/ and assets/ exists and says which step opens it",
-      "max_points": 6,
-      "penalty_per_error": 1,
-      "na_when": "N/A when: the skill has neither references/ nor assets/",
-      "details": "Pass when:\n- Every file in references/ and assets/ is mentioned in SKILL.md by relative path (e.g. references/tc-writing-rules.md)\n- Every path mentioned in SKILL.md exists (correct spelling, correct case)\n- Each file states which step opens it (\"Step N\"), or is mentioned inside the content of step N; that step number must exist in the Process\nFail when: an \"orphan\" file is never mentioned; a link is broken; only a generic \"see references folder\" is given; files are listed without saying which step\nN/A when: the skill has neither references/ nor assets/",
-      "note": "Each error deducts 1 point"
-    },
-    {
-      "id": "A6",
-      "group": "A",
-      "name": "Files in the right place",
-      "type": "deduction",
-      "pass_when": "references/ holds rules/checklists; templates live in assets/",
-      "max_points": 4,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Pass when:\n- Skill folder root: only SKILL.md (LICENSE allowed)\n- references/: documents for Claude to READ (rules, checklists, guides, formats), .md/.txt\n- assets/: files to USE/COPY into the output (.xlsx/.docx templates, images)\n- scripts/: runnable code (.py/.sh)\n- No stray folders (docs/, templates/, ...), no lock files such as ~$*.xlsx, no output files already filled with data\nFail when: an Excel template sits in references/ or at the root; a checklist .md sits in assets/; a .py file sits in references/\nNote: sample code written INSIDE a references .md file is still accepted",
-      "note": "Each error deducts 1 point"
-    },
-    {
-      "id": "A7",
-      "group": "A",
-      "name": "No domain knowledge",
-      "type": "deduction",
-      "pass_when": "No AUT name, URL, test account or project business rule in the skill",
-      "max_points": 7,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Scan scope: SKILL.md, references/, scripts/ AND the content inside assets/ (cells, hidden sheets, dropdowns of the template)\nFail when any of these appear:\n- A real AUT / product / customer name\n- A URL, domain, IP, or environment name (staging, UAT server, ...)\n- A test account, password, token or API key\n- A project business rule written as a rule (e.g. \"a cart holds at most 20 items\")\n- A fixed project list: modules, screens, known issues, ticket IDs\nAllowed: general QA principles; the team's generic template format; illustrative examples marked \"e.g.\"; placeholders such as <AUT name>\nTest: \"If I used this skill on a different project, would this sentence still be true?\" If not, it fails",
-      "note": "Each error deducts 1 point"
-    },
-    {
-      "id": "A8",
-      "group": "A",
-      "name": "No overlap",
-      "type": "deduction",
-      "pass_when": "No two skills have descriptions covering the same scope (N/A when there is only 1 skill)",
-      "max_points": 5,
-      "penalty_per_error": 1,
-      "na_when": "N/A when: there is only 1 skill",
-      "details": "N/A when: there is only 1 skill\nHow to check: compare the descriptions pair by pair; for each skill write one typical request and see whether it also matches the other skill's description\nA pair passes when:\n- The ACTIVITY or the INPUT differs; or\n- If the input is the same, the description states a boundary (e.g. \"before designing test cases\", \"from the output of ...\", \"Do NOT use for ...\")\nFail when: two descriptions are near-paraphrases of each other; one description swallows the other (\"Use for any QA task\")",
-      "note": "Each error deducts 1 point"
-    },
     {
       "id": "B1",
       "group": "B",
-      "name": "Clarification questions",
-      "type": "deduction",
-      "pass_when": "An output exists, and the chat evidence shows the skill produced it",
-      "max_points": 6,
-      "penalty_per_error": 2,
-      "na_when": null,
-      "details": "Pass when BOTH hold:\n1. Output exists: the Markdown analysis in the chat has a \"Clarification questions\" section split into 2 groups, \"Must ask\" and \"Nice to confirm\", each with at least 1 question (a group with no question must say \"None\" with a reason)\n2. Evidence the skill produced it: the transcript shows the test-requirements-analysis skill being invoked (skill name in a tool call, or Claude reading that skill's SKILL.md), and the questions appear in Claude's answer RIGHT AFTER that invocation, in the same chat\nFail when: only a screenshot or text file of the questions is submitted, with no transcript; the questions were typed into the chat by the trainee; the questions are not split into Must ask / Nice to confirm; the transcript is cut and the skill-invocation part is missing",
-      "note": "Each error deducts 2 points"
+      "name": "Task Decomposition",
+      "description": "Ability to split a QA task into suitable steps or subtasks so that AI can support it effectively.",
+      "pass_intro": "Pass when ALL of the following hold:",
+      "pass_when_all": [
+        "Picks one concrete QA task and states its goal, input and expected output (e.g. user story → reviewed list of test requirements)",
+        "The subtasks cover the whole chain from input to output, with no key stage missing (analysis, design, review/check)",
+        "Each subtask has one purpose and one checkable output (e.g. \"list of ambiguous points\", \"list of test conditions\")",
+        "The subtasks follow dependency order: each step only uses results that have already been produced",
+        "Each subtask is sized for AI: unrelated activities are not crammed into one prompt, and the task is not chopped into trivial steps",
+        "The decomposition marks where a human must confirm or where AI is likely to go wrong (e.g. after the list of ambiguous points, before test design)"
+      ],
+      "fail_when_any": [
+        "The whole task is handed to AI in one prompt",
+        "One step mixes several different activities (analysis + design + reporting)",
+        "A step has no defined output, so nobody can tell whether it was done right",
+        "There is no step that reviews or checks the AI's results",
+        "The steps only run once, for exactly one requirement (e.g. hard-coded details instead of a generic input)"
+      ]
     },
     {
       "id": "B2",
       "group": "B",
-      "name": "TR list",
-      "type": "deduction",
-      "pass_when": "A TR file exists, and the evidence shows the skill produced it",
-      "max_points": 8,
-      "penalty_per_error": 2,
-      "na_when": null,
-      "details": "Pass when ALL 3 hold:\n1. An .xlsx file exists with a sheet \"Test Requirement\" and the columns: AC ID | Acceptance Criteria | TR ID | Test Requirements | Notes, with at least 1 data row\n2. The transcript shows the test-requirements-analysis skill being invoked, and the same chat contains the Python code that creates the file (file name in the code = submitted file name)\n3. The file was created by copying the template from assets/ (keeping the title \"Requirements Traceability Matrix\", styles and column widths), not rebuilt from scratch\nFail when: no transcript; the submitted file name does not match the file created in the chat; columns are missing or the sheet name is wrong; the file was made by hand by the trainee\nNote: hand edits after the skill created the file are allowed (graded under critical thinking), but the structure must be kept and the trainee must record what they changed",
-      "note": "Each error deducts 2 points"
+      "name": "Context & Knowledge Management",
+      "description": "Ability to provide, organise and maintain context, requirements, constraints, reference materials and domain knowledge for AI.",
+      "pass_intro": "Pass when ALL of the following hold:",
+      "pass_when_all": [
+        "Provides enough of the right kinds of context for the task: goal, requirements, constraints (scope, test case conventions, priority, environment), reference documents and the necessary domain knowledge. The trainee identifies which information the AI really needs for that task",
+        "Clearly separates the kinds of information: general instructions (how the AI works), project/domain knowledge (project information, glossary, business rules) and the input data of each run. Does not mix everything into one long prompt",
+        "Organises context in a structured, easy-to-find way: context lives in clearly named files/sections, the content is concise, and the AI knows when to read which part. Does not paste a whole long document when only part of it is needed",
+        "Distinguishes fact from assumption: states what is confirmed, what is assumed and what is still missing. Does not let the AI silently fill the gaps",
+        "Handles source reliability: when documents conflict, states which source is authoritative (latest spec, customer decision), or asks the AI to report the conflict instead of choosing on its own",
+        "Maintains and updates context: has a way to keep context correct over time (version/date recorded, updated when requirements change, outdated information removed) and a single source for each kind of information",
+        "Protects information: does not put sensitive data (real customer data, accounts, passwords, personal information) into AI without permission; knows how to mask it or replace it with fake data"
+      ],
+      "fail_when_any": [
+        "Gives only a short request with little background, leaving the AI to guess the domain, conventions or constraints",
+        "Pastes whole long documents without selection, making the context noisy",
+        "Mixes instructions, project knowledge and input data in one undivided block",
+        "Does not distinguish fact from assumption, letting the AI infer when information is missing",
+        "Documents conflict but no authoritative source is named",
+        "Context is old, has no version and no way to be updated when requirements change",
+        "The same information is repeated in several places, so fixing one place leaves the others wrong",
+        "Puts sensitive data or real customer data into AI without control"
+      ]
     },
     {
       "id": "B3",
       "group": "B",
-      "name": "TC list",
-      "type": "deduction",
-      "pass_when": "A TC file exists, and the evidence shows the skill produced it",
-      "max_points": 8,
-      "penalty_per_error": 2,
-      "na_when": null,
-      "details": "Pass when ALL 4 hold:\n1. An .xlsx file exists with a sheet \"TC List\" and the columns: TR ID | TC ID | TC Summary | Pre-Condition | Steps | Expected Result | Notes, with at least 1 data row\n2. The transcript shows the test-case-generation skill being invoked, and the same chat contains the Python code that creates the file (file name in the code = submitted file name)\n3. The file was created by copying the template from assets/ (keeping the title \"Test Case List\", styles and column widths)\n4. The workflow chains: every TR ID value in the TC file exists in the TR file submitted for B2 (proving the TC file was generated from the TR file, not run independently)\nFail when: no transcript; file name mismatch; columns missing or wrong sheet name; a TR ID in the TC file is not in the TR file\nNote: hand edits after the skill created the file are allowed if the structure is kept and the trainee records what they changed",
-      "note": "Each error deducts 2 points"
+      "name": "Skill Execution & Repeatability",
+      "description": "Evaluates the ability to use AI skills for their intended purpose, provide suitable input, follow the important instructions, and repeat the process consistently in similar situations.",
+      "pass_intro": "Pass when:",
+      "pass_when_all": [
+        "Picks the right skill for the right situation (matches its trigger condition)",
+        "Provides the input the skill requires and answers fully when the skill asks for more",
+        "Follows the skill's mandatory steps and checkpoints",
+        "Checks the output against the skill's standard, notices when the AI deviates from the process, and asks for a rerun",
+        "Similar runs give consistent results in structure and level of detail",
+        "Records, or can explain, how to run it, so someone else following it gets an equivalent result"
+      ],
+      "fail_when_any": [
+        "Uses a skill for work outside its scope",
+        "Input is missing or of the wrong type, and the result the AI guessed is accepted",
+        "Skips or overrides the skill's mandatory steps/checkpoints",
+        "Accepts the result without checking it against the skill's output standard",
+        "Two similar runs differ clearly and the difference cannot be explained",
+        "Only one run is available as evidence",
+        "The result depends on different ad-hoc prompts in each run"
+      ]
     },
     {
       "id": "B4",
       "group": "B",
-      "needs": ["bugs"],
-      "name": "Bug report",
-      "type": "deduction",
-      "pass_when": "A bug report exists, and the evidence shows the skill produced it",
-      "max_points": 8,
-      "penalty_per_error": 2,
-      "na_when": null,
-      "details": "Pass when ALL 3 hold:\n1. The chat has a Markdown analysis with all 5 sections: Evidence Reviewed | Error Patterns & Root Cause Hypotheses | Facts vs. Assumptions vs. Hypotheses | Impact, Severity & Priority Assessment | Missing Information & Recommended Next Investigation\n2. An .xlsx file exists with a sheet \"Bug List\" and all 14 columns: ID | Summary | Description | Pre-Condition | Steps to Reproduce | Screenshot | Build found | Reproducibility | Severity | Frequency | Priority | Keyword | Status | Note, with at least 1 bug, and the dropdowns kept from the template\n3. The transcript shows the defect-analysis-reporting skill being invoked, with the original evidence (screenshot/log) uploaded, and the same chat contains the Python code that creates the file (file name matches)\nFail when: one of the 2 outputs (Markdown or Excel) is missing; a section is missing; no transcript; the file was not created from the template; the original evidence in the chat differs from the evidence the trainee submitted",
-      "note": "Each error deducts 2 points"
+      "name": "Exception Handling & Recovery",
+      "description": "Evaluates the ability to detect, respond to and recover when the workflow meets unexpected situations, such as missing input, conflicting information, AI output that does not meet requirements, a failed execution step, or a result that cannot be verified.",
+      "pass_intro": "Pass when:",
+      "pass_when_all": [
+        "Detects exceptions on their own, from concrete signals",
+        "Responds correctly to each type:\n  - Missing input: stop and ask, do not let the AI guess\n  - Conflicting information: state the conflict, ask for the authoritative source\n  - AI output not acceptable: point to exactly what is wrong, ask for a fix with guidance\n  - Execution step failed: read the error, find the cause, try a reasonable fix, limit the number of attempts\n  - Result cannot be verified: mark it unverified, state how to verify it",
+        "Recovers in a controlled way: goes back to the right point, keeps the correct results, re-checks after fixing",
+        "Knows when to stop and hand over to a human (escalation criteria)"
+      ],
+      "fail_when_any": [
+        "Accepts wrong or fabricated output without checking",
+        "Lets the AI fill in missing input, or pick a side when information conflicts",
+        "Gives only generic feedback (\"that's wrong, do it again\")",
+        "Repeats the same approach when a step fails",
+        "Presents unverified results as fact",
+        "Reruns from the start unnecessarily, or does not re-check after fixing",
+        "Has no stop or escalation criteria",
+        "Only handles exceptions when someone points them out"
+      ]
+    },
+    {
+      "id": "B5",
+      "group": "B",
+      "name": "AI Integration & Workflow Coverage",
+      "description": "Evaluates how far AI is applied to the QA steps in the workflow that can benefit from it, from supporting a single activity to coordinating AI across several linked steps, with suitable control points and human intervention.",
+      "pass_intro": "Pass when:",
+      "pass_when_all": [
+        "Maps the QA steps, shows which steps should use AI and explains why",
+        "Applies AI to at least 2 linked steps (the output of one step is the input of the next)",
+        "Output passes between steps without being copied by hand or rewritten",
+        "Has control points at high-risk steps",
+        "Keeps humans in the right places (business decisions, communication with the customer)",
+        "Knows which steps should not use AI and states why"
+      ],
+      "fail_when_any": [
+        "Uses AI only for a single isolated task, with no link between steps",
+        "Skips steps with a clear benefit without explanation",
+        "Connects several steps but has no control point",
+        "Automates decisions that need a human (sending to the customer automatically, finalising expected results automatically)",
+        "The output of one step must be copied by hand and heavily edited before it can be used",
+        "The workflow is only an idea and has never been run"
+      ]
+    },
+    {
+      "id": "B6",
+      "group": "B",
+      "name": "Usability & Execution Efficiency",
+      "description": "Evaluates how easy and efficient the AI-enabled skill/workflow is to run, including how simple it is to launch, the need to re-provide context or input, the number of repeated manual actions, and how much the user must intervene to complete the task.",
+      "pass_intro": "Pass when:",
+      "pass_when_all": [
+        "Simple to launch; someone else can run it by reading the instructions",
+        "Context does not have to be provided again each time; only the new input is given",
+        "Input already given is not asked for again; the previous step's output flows into the next step automatically",
+        "Few repeated manual actions (copy-paste, reformatting, re-entering)",
+        "A human only intervenes at the designed control points; almost no wasted intervention",
+        "The instructions are enough for a new tester to run it the first time without getting stuck",
+        "Effort is lower than the baseline (reasonable estimate)"
+      ],
+      "fail_when_any": [
+        "Complex launch: a long prompt must be pasted each time, or there are many undocumented preparation steps",
+        "Context must be pasted again on every run",
+        "The same information is asked for several times",
+        "Output must be copy-pasted by hand between steps",
+        "The user constantly has to prompt the AI to finish the task",
+        "Only its creator can run it",
+        "Effort equals or exceeds doing it by hand, with no explanation",
+        "No complete run is available as evidence"
+      ]
     },
     {
       "id": "C1",
       "group": "C",
-      "name": "Clarification questions",
-      "type": "deduction",
-      "pass_when": "Identifies the ambiguous points in the answer key; splits \"Must ask\" and \"Nice to confirm\"",
-      "max_points": 3,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Compare against: the list of ambiguous points in the answer key\nMatching rule: a question matches if it asks about exactly that ambiguous point, wording need not match; a question that combines several points counts for each point\nPass when ALL hold:\n- At least 70% of all ambiguous points are found\n- Every Mandatory ambiguous point the trainee found sits in \"Must ask\", not in \"Nice to confirm\"\n- Both groups \"Must ask\" and \"Nice to confirm\" are present\nFail when: a Mandatory ambiguous point is missed; a Mandatory ambiguous point is placed in \"Nice to confirm\"; a question is generic and names no ambiguous point (\"Is there anything else required?\")\nNote: a sensible question that is not in the answer key is not penalised; record it so the answer key can be updated",
-      "note": "Each error deducts 1 point"
+      "name": "Accuracy",
+      "description": "Evaluates how accurate the QA output is against requirements, business rules, source materials and verified facts.\n- No false information or fabricated content.\n- Logic and conclusions are consistent with the evidence.\n- No violation of business rules or identified constraints.",
+      "pass_intro": "Pass when ALL of the following hold:",
+      "pass_when_all": [
+        "Finds at least 70% of all ambiguous points",
+        "Every Mandatory ambiguous point the trainee found is in the \"Must ask\" group, not in \"Nice to confirm\"",
+        "Both groups \"Must ask\" and \"Nice to confirm\" are present"
+      ],
+      "fail_when_any": [
+        "Misses even 1 Mandatory ambiguous point",
+        "Puts a Mandatory ambiguous point in \"Nice to confirm\"",
+        "Asks a generic question that names no specific ambiguous point (\"Is there anything else required?\")"
+      ],
+      "needs": [
+        "ambiguities"
+      ]
     },
     {
       "id": "C2",
       "group": "C",
-      "name": "TR list",
-      "type": "deduction",
-      "pass_when": "Every ambiguous point or edge case in the answer key has a TR row; each TR traces to an AC or N/A",
-      "max_points": 4,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Compare against: the ACs in the user story + the ambiguous points in the answer key\nPass when ALL hold:\n- Every AC in the user story has at least 1 TR row\n- At least 70% of all ambiguous points have a matching TR row\n- 100% of TR rows have a correct AC ID (that AC really exists in the user story) or say \"N/A\"; N/A rows must have Notes naming the origin (Edge case / Risk / Assumption / Missing info)\nFail when: an AC has no TR; a Mandatory ambiguous point has no TR; a TR cites an AC ID that does not exist; an edge case is attached to an unrelated AC instead of being marked N/A",
-      "note": "Each error deducts 1 point"
+      "name": "Completeness & Coverage",
+      "description": "Evaluates how complete the QA output is against the scope, requirements, scenarios and aspects that need checking.\n- Covers the mandatory content.\n- Does not miss important scenarios, conditions or risks within scope.\n- Shows the related requirements and cases that need handling.",
+      "pass_intro": "Pass when:",
+      "pass_when_all": [
+        "Every requirement/AC in scope is covered by at least one output item",
+        "Has all mandatory components of the template (objective, precondition, test data, steps, expected result...)",
+        "Has all relevant scenario types: positive, negative, boundary, validation, error handling, permissions, integration, UI, compatibility, regression",
+        "Misses no important risk in scope (payment, data, security, main flow)",
+        "Missing or ambiguous points in the requirements are raised as clarification questions or assumptions",
+        "Parts not covered or excluded are stated with a reason; out-of-scope content does not count as coverage",
+        "No serious omissions; minor omissions are within the allowed threshold"
+      ],
+      "fail_when_any": [
+        "A requirement in scope has no item covering it",
+        "Only the happy path, with negative/boundary/error handling missing even though relevant",
+        "Mandatory components are missing in many items",
+        "An important scenario or risk is missed",
+        "Unfinished parts are not stated, giving the false impression that the output is complete",
+        "Claims \"fully covered\" with no traceability or evidence",
+        "Pads the count with items that repeat one condition and add no coverage",
+        "Ambiguous points in the requirements are ignored, or silently filled in without saying so"
+      ]
     },
     {
       "id": "C3",
       "group": "C",
-      "name": "TC coverage",
-      "type": "deduction",
-      "pass_when": "Every TR has at least 1 TC; edge cases have their own TC",
-      "max_points": 4,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Compare against: the trainee's own TR file + the edge cases in the answer key\nPass when ALL hold:\n- Every TR ID in the TR file appears at least once in the TR ID column of the TC file (check each ID)\n- Every TR row whose Notes say \"Edge case\" has at least 1 dedicated TC, i.e. a TC Summary aimed at exactly that edge case, not merged into a happy-path TC\n- Every Mandatory edge case in the answer key has at least 1 TC testing it\nFail when: a TR has no TC; an edge case is only mentioned inside another TC; a TR is marked BLOCKED with no accompanying TC and no stated reason\nNote: a TR marked BLOCKED may have a TC carrying a BLOCKED flag, which still counts as covered",
-      "note": "Each error deducts 1 point"
+      "name": "Usability & Format",
+      "description": "Evaluates how clear, structured and ready to use the output is in the intended QA process.\n- Correct format/template and required structure.\n- Clear, consistent and easy-to-understand content.\n- Usable by the recipient or the next stage without unnecessary editing.",
+      "pass_intro": "Pass when:",
+      "pass_when_all": [
+        "Matches the template and structure: all columns/sections, correct order, field names, ID and naming conventions",
+        "Formatting and terminology are consistent across items",
+        "Clear, with only one interpretation: steps are concrete actions, expected results are verifiable",
+        "The recipient understands it and can use it without asking back",
+        "Each item is concise and has one purpose, not crammed with several conditions",
+        "Usable immediately (importable, no bulk hand-editing); no placeholders or AI lead-in text left",
+        "Organised (grouped by function, priority/status, with a summary if long)",
+        "Tone and language suit the recipient (e.g. for a Japanese customer, in English: short, clear, polite)"
+      ],
+      "fail_when_any": [
+        "Template columns/fields are wrong or missing; naming does not follow the convention",
+        "Formatting is inconsistent across items",
+        "Steps or expected results are vague (\"works normally\")",
+        "One item combines several purposes or several expected results",
+        "Traces of the AI remain (lead-in text, placeholders, stray notes)",
+        "Needs a lot of hand-editing before it can be used",
+        "The recipient cannot understand it without asking back",
+        "Too long or rambling, so the key information is buried",
+        "Tone does not suit the recipient, or the structure breaks the next step"
+      ]
     },
     {
       "id": "C4",
       "group": "C",
-      "name": "TC quality",
-      "type": "deduction",
-      "pass_when": "Expected Result is specific, never \"works correctly\"",
-      "max_points": 5,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Compare against: the whole Expected Result column (if more than 50 TCs: check all edge-case TCs plus a random 20 of the rest)\nAn Expected Result is specific when it states at least 1 observable thing: message content, displayed value, screen navigated to, field/button state, data saved or not saved\nPhrases forbidden when standing alone: \"works correctly/properly/as expected\", \"displayed correctly\", \"no error\", \"success\", \"OK\"\nPass when: 0 Expected Results violate this, and Steps contain concrete test data (not a generic \"enter valid data\")\nFail when: at least 1 Expected Result violates this. Record the TC ID with a quote, one error per violating Expected Result",
-      "note": "Each error deducts 1 point"
-    },
-    {
-      "id": "C5",
-      "group": "C",
-      "needs": ["bugs"],
-      "name": "Bug finding",
-      "type": "deduction",
-      "pass_when": "Finds at least N bugs from the answer key's bug list",
-      "max_points": 3,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Compare against: the planted bug list in the answer key (BUG-xx), each with a severity label\nMatching rule: a trainee bug matches a BUG-xx if it has the right location and the right symptom; several reports of the same cause count once\nN = 60% of all BUG-xx rounded up (baseline.thresholds.bug_found_pct), e.g. 5 bugs gives N = 3\nPass when ALL hold:\n- At least N matching bugs found\n- 100% of the Critical/Major bugs found\nFail when: fewer than N matching bugs, or a Critical/Major bug is missed\nNote: a bug outside the answer key that the grader confirms is real is recorded but does not count toward N; a bug that cannot be reproduced or is correct behaviour per the spec is recorded in grading_notes as a false positive",
-      "note": "Each error deducts 1 point"
-    },
-    {
-      "id": "C6",
-      "group": "C",
-      "needs": ["bugs"],
-      "name": "Bug report",
-      "type": "deduction",
-      "pass_when": "Each bug has steps, expected/observed, severity and priority with reasons; no invented environment information",
-      "max_points": 5,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Compare against: every bug in the Bug List file + the exam document (the list of environment information the exam provides)\nPass when EACH bug satisfies:\n- Steps to Reproduce: numbered, start from a clear initial state, someone else can follow them\n- Has both an Expected Result and an Observed Result, and the two differ\n- Severity and Priority come from the dropdown values, each with its own reason (in Note or in the Markdown \"Impact, Severity & Priority\")\n- Build found / browser / OS: filled in only if the exam provides it; if not, left empty with \"not provided\" in Note\nFail when: a bug lacks steps / expected / observed; Severity or Priority has no reason; environment information that is not in the exam is filled in (invented)\nSeverity deviating by more than 1 level from the answer key is NOT an error here: it is an advisory flag (C6-severity) that a human decides",
-      "note": "Each error deducts 1 point",
-      "advisory": [
-        {
-          "id": "C6-severity",
-          "text": "A bug's severity deviates by more than 1 level from the answer key's severity (per baseline.severity_scale)",
-          "decision": "human",
-          "note": "The agent only records the flag with the bug ID, the trainee's severity and the key's severity. A human decides pass/fail; until then it costs no points and the report is provisional."
-        }
+      "name": "Human Validation & Improvement",
+      "description": "Evaluates the QA's ability to verify the output, identify problems and make the necessary improvements based on evidence.\n- Checks the output against requirements, business rules or trusted sources.\n- Detects and handles errors, gaps, unverified assumptions or unsuitable content.\n- Edits the output and re-checks it after improving.\n- Does not accept output just because AI produced it or it looks plausible.\nExample: the QA finds that AI produced a wrong expected result, checks the requirement, fixes the test case and verifies the result again.",
+      "pass_intro": "Pass when:",
+      "pass_when_all": [
+        "Checks against trusted sources (requirements, business rules), not just \"it reads plausibly\"",
+        "Checks systematically, prioritising high-risk items (expected results, boundaries, business rules, conclusions)",
+        "Finds real problems: errors, fabricated content, gaps, unverified assumptions, unsuitable content",
+        "Handles each finding properly (fix per the source, label as an assumption, ask for clarification, or delete) with an evidence-based reason",
+        "Does not fix by guessing when the source is insufficient",
+        "Fixes the output and re-checks after fixing; the fix introduces no new error",
+        "Does not change what the AI already got right",
+        "Items that cannot be verified are marked unverified, not presented as fact",
+        "Keeps a record: what was found, the source checked, what was fixed, the re-check result"
+      ],
+      "fail_when_any": [
+        "Accepts AI output without checking it against a source",
+        "Only checks spelling or changes formatting, ignoring content and business rules",
+        "\"Verifies\" only by asking the same AI again, with no independent source",
+        "Misses a major error that checking the source should have caught",
+        "Gives generic feedback (\"that's wrong, do it again\") without pointing to the error and the correct source",
+        "Fixes by guessing, with no source",
+        "Does not re-check after fixing, or the fix introduces a new error",
+        "Changes correct content into wrong content",
+        "Leaves an unverified assumption as fact in the final version",
+        "Has no verification record, or no original AI output to compare against"
       ]
-    },
-    {
-      "id": "C7",
-      "group": "C",
-      "name": "No fabrication",
-      "type": "deduction",
-      "pass_when": "No rule is presented as a requirement when the user story does not state it",
-      "max_points": 6,
-      "penalty_per_error": 1,
-      "na_when": null,
-      "details": "Compare against: the verbatim user story / ACs of the exam + the Notes of TR/TC\nHow to check: list every concrete rule appearing in the TR, Expected Results and Steps (limits, lengths, formats, error message content, permissions, processing order), then look for each one in the user story\nPass when: every rule NOT in the user story is marked \"Assumption —\" or \"BLOCKED —\", or is put into a clarification question\nFail when: at least 1 rule that is not in the user story is written as a confirmed requirement\nFailing example: the user story says nothing about password length, but a TC states Expected \"Shows error 'Password must be 8-20 characters'\" with no Assumption flag",
-      "note": "Each error deducts 1 point"
     }
   ]
 }

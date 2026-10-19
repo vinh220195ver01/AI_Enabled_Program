@@ -1,0 +1,64 @@
+{
+  "shared": "course-rules",
+  "version": "0.3-draft",
+  "settings": {
+    "pass_rule": {
+      "mode": "all",
+      "text": "A criterion passes only when ALL its conditions hold (including the sub-category conditions, where present); there is no partial pass. One unmet condition fails the whole criterion."
+    },
+    "scoring": {
+      "option": 2,
+      "formula": "Skill Standard = Average of all skills for one competency\nAI Application/QA Output Quality\nCompetency Score = Skill Standard*0.2 + AI Application * 0.5 + QA Output Quality * 0.3\nProposed Passing Rules: No Competency Score <3 and AI Safety & Responsible Use is Pass",
+      "group_score": "mean",
+      "group_score_text": "A group's score is the mean of its criteria scores; criteria in a group have equal weight.",
+      "competency_score": "A*0.2 + B*0.5 + C*0.3, using each group's weight",
+      "per_competency": {
+        "groups": [
+          "A",
+          "B",
+          "C"
+        ],
+        "text": "Every group is scored separately for each competency the profile covers: B and C from the work done for that competency, A from the skills that belong to it."
+      },
+      "skill_to_competency": {
+        "decided_by": "judge",
+        "reported": true,
+        "reviewed_by": "trainer",
+        "text": "The judge (AI agent) decides which competency each submitted skill belongs to, with a reason; the final report lists the mapping, and the trainer reviews it."
+      },
+      "criterion_score": null,
+      "pass_threshold": null,
+      "status": "Option 2 chosen; Option 1 rejected. Groups are scored per competency; the judge maps skills to competencies and the trainer reviews the mapping. Still undecided: the number a pass/fail criterion counts as (criterion_score), the pass line that replaces 'no competency score < 3' (pass_threshold), whether group A is scored per skill, and rounding."
+    },
+    "competency_catalog": [
+      {
+        "id": "requirements-analysis",
+        "name": "AI-assisted Requirements Analysis"
+      },
+      {
+        "id": "test-design",
+        "name": "AI-assisted Test Design"
+      },
+      {
+        "id": "test-case-generation",
+        "name": "AI-assisted Test Case Generation"
+      },
+      {
+        "id": "test-data-generation",
+        "name": "AI-assisted Test Data Generation"
+      },
+      {
+        "id": "automation-development",
+        "name": "AI-assisted Automation Development"
+      },
+      {
+        "id": "test-maintenance",
+        "name": "AI-assisted Test Maintenance"
+      },
+      {
+        "id": "defect-analysis-reporting",
+        "name": "AI-assisted Defect Analysis & Reporting"
+      }
+    ]
+  }
+}
