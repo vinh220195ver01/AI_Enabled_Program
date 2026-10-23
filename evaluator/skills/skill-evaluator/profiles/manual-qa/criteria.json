@@ -1,8 +1,8 @@
 {
   "profile": "manual-qa",
-  "version": "0.10-draft",
+  "version": "0.11-draft",
   "scoring_model": "weighted-pass-fail",
-  "status": "criteria loaded, not runnable: the pass/fail-to-score mapping and the pass threshold are undecided, whether the bug report is graded is open; the safety gate has no conditions yet",
+  "status": "criteria loaded, not runnable: the pass/fail-to-score mapping and the pass threshold are undecided; the safety gate has no conditions yet",
   "extends": [
     "../_shared/course-rules.json"
   ],
@@ -10,7 +10,8 @@
     "requirements-analysis",
     "test-design",
     "test-case-generation",
-    "test-data-generation"
+    "test-data-generation",
+    "defect-analysis-reporting"
   ],
   "groups": [
     {
@@ -61,13 +62,6 @@
         "The subtasks follow dependency order: each step only uses results that have already been produced",
         "Each subtask is sized for AI: unrelated activities are not crammed into one prompt, and the task is not chopped into trivial steps",
         "The decomposition marks where a human must confirm or where AI is likely to go wrong (e.g. after the list of ambiguous points, before test design)"
-      ],
-      "fail_when_any": [
-        "The whole task is handed to AI in one prompt",
-        "One step mixes several different activities (analysis + design + reporting)",
-        "A step has no defined output, so nobody can tell whether it was done right",
-        "There is no step that reviews or checks the AI's results",
-        "The steps only run once, for exactly one requirement (e.g. hard-coded details instead of a generic input)"
       ]
     },
     {
@@ -84,16 +78,6 @@
         "Handles source reliability: when documents conflict, states which source is authoritative (latest spec, customer decision), or asks the AI to report the conflict instead of choosing on its own",
         "Maintains and updates context: has a way to keep context correct over time (version/date recorded, updated when requirements change, outdated information removed) and a single source for each kind of information",
         "Protects information: does not put sensitive data (real customer data, accounts, passwords, personal information) into AI without permission; knows how to mask it or replace it with fake data"
-      ],
-      "fail_when_any": [
-        "Gives only a short request with little background, leaving the AI to guess the domain, conventions or constraints",
-        "Pastes whole long documents without selection, making the context noisy",
-        "Mixes instructions, project knowledge and input data in one undivided block",
-        "Does not distinguish fact from assumption, letting the AI infer when information is missing",
-        "Documents conflict but no authoritative source is named",
-        "Context is old, has no version and no way to be updated when requirements change",
-        "The same information is repeated in several places, so fixing one place leaves the others wrong",
-        "Puts sensitive data or real customer data into AI without control"
       ]
     },
     {
@@ -109,15 +93,6 @@
         "Checks the output against the skill's standard, notices when the AI deviates from the process, and asks for a rerun",
         "Similar runs give consistent results in structure and level of detail",
         "Records, or can explain, how to run it, so someone else following it gets an equivalent result"
-      ],
-      "fail_when_any": [
-        "Uses a skill for work outside its scope",
-        "Input is missing or of the wrong type, and the result the AI guessed is accepted",
-        "Skips or overrides the skill's mandatory steps/checkpoints",
-        "Accepts the result without checking it against the skill's output standard",
-        "Two similar runs differ clearly and the difference cannot be explained",
-        "Only one run is available as evidence",
-        "The result depends on different ad-hoc prompts in each run"
       ]
     },
     {
@@ -131,16 +106,6 @@
         "Responds correctly to each type:\n  - Missing input: stop and ask, do not let the AI guess\n  - Conflicting information: state the conflict, ask for the authoritative source\n  - AI output not acceptable: point to exactly what is wrong, ask for a fix with guidance\n  - Execution step failed: read the error, find the cause, try a reasonable fix, limit the number of attempts\n  - Result cannot be verified: mark it unverified, state how to verify it",
         "Recovers in a controlled way: goes back to the right point, keeps the correct results, re-checks after fixing",
         "Knows when to stop and hand over to a human (escalation criteria)"
-      ],
-      "fail_when_any": [
-        "Accepts wrong or fabricated output without checking",
-        "Lets the AI fill in missing input, or pick a side when information conflicts",
-        "Gives only generic feedback (\"that's wrong, do it again\")",
-        "Repeats the same approach when a step fails",
-        "Presents unverified results as fact",
-        "Reruns from the start unnecessarily, or does not re-check after fixing",
-        "Has no stop or escalation criteria",
-        "Only handles exceptions when someone points them out"
       ]
     },
     {
@@ -156,14 +121,6 @@
         "Has control points at high-risk steps",
         "Keeps humans in the right places (business decisions, communication with the customer)",
         "Knows which steps should not use AI and states why"
-      ],
-      "fail_when_any": [
-        "Uses AI only for a single isolated task, with no link between steps",
-        "Skips steps with a clear benefit without explanation",
-        "Connects several steps but has no control point",
-        "Automates decisions that need a human (sending to the customer automatically, finalising expected results automatically)",
-        "The output of one step must be copied by hand and heavily edited before it can be used",
-        "The workflow is only an idea and has never been run"
       ]
     },
     {
@@ -180,16 +137,6 @@
         "A human only intervenes at the designed control points; almost no wasted intervention",
         "The instructions are enough for a new tester to run it the first time without getting stuck",
         "Effort is lower than the baseline (reasonable estimate)"
-      ],
-      "fail_when_any": [
-        "Complex launch: a long prompt must be pasted each time, or there are many undocumented preparation steps",
-        "Context must be pasted again on every run",
-        "The same information is asked for several times",
-        "Output must be copy-pasted by hand between steps",
-        "The user constantly has to prompt the AI to finish the task",
-        "Only its creator can run it",
-        "Effort equals or exceeds doing it by hand, with no explanation",
-        "No complete run is available as evidence"
       ]
     },
     {
@@ -202,11 +149,6 @@
         "Finds at least 70% of all ambiguous points",
         "Every Mandatory ambiguous point the trainee found is in the \"Must ask\" group, not in \"Nice to confirm\"",
         "Both groups \"Must ask\" and \"Nice to confirm\" are present"
-      ],
-      "fail_when_any": [
-        "Misses even 1 Mandatory ambiguous point",
-        "Puts a Mandatory ambiguous point in \"Nice to confirm\"",
-        "Asks a generic question that names no specific ambiguous point (\"Is there anything else required?\")"
       ],
       "needs": [
         "ambiguities"
@@ -226,16 +168,6 @@
         "Missing or ambiguous points in the requirements are raised as clarification questions or assumptions",
         "Parts not covered or excluded are stated with a reason; out-of-scope content does not count as coverage",
         "No serious omissions; minor omissions are within the allowed threshold"
-      ],
-      "fail_when_any": [
-        "A requirement in scope has no item covering it",
-        "Only the happy path, with negative/boundary/error handling missing even though relevant",
-        "Mandatory components are missing in many items",
-        "An important scenario or risk is missed",
-        "Unfinished parts are not stated, giving the false impression that the output is complete",
-        "Claims \"fully covered\" with no traceability or evidence",
-        "Pads the count with items that repeat one condition and add no coverage",
-        "Ambiguous points in the requirements are ignored, or silently filled in without saying so"
       ]
     },
     {
@@ -253,17 +185,6 @@
         "Usable immediately (importable, no bulk hand-editing); no placeholders or AI lead-in text left",
         "Organised (grouped by function, priority/status, with a summary if long)",
         "Tone and language suit the recipient (e.g. for a Japanese customer, in English: short, clear, polite)"
-      ],
-      "fail_when_any": [
-        "Template columns/fields are wrong or missing; naming does not follow the convention",
-        "Formatting is inconsistent across items",
-        "Steps or expected results are vague (\"works normally\")",
-        "One item combines several purposes or several expected results",
-        "Traces of the AI remain (lead-in text, placeholders, stray notes)",
-        "Needs a lot of hand-editing before it can be used",
-        "The recipient cannot understand it without asking back",
-        "Too long or rambling, so the key information is buried",
-        "Tone does not suit the recipient, or the structure breaks the next step"
       ]
     },
     {
@@ -282,18 +203,6 @@
         "Does not change what the AI already got right",
         "Items that cannot be verified are marked unverified, not presented as fact",
         "Keeps a record: what was found, the source checked, what was fixed, the re-check result"
-      ],
-      "fail_when_any": [
-        "Accepts AI output without checking it against a source",
-        "Only checks spelling or changes formatting, ignoring content and business rules",
-        "\"Verifies\" only by asking the same AI again, with no independent source",
-        "Misses a major error that checking the source should have caught",
-        "Gives generic feedback (\"that's wrong, do it again\") without pointing to the error and the correct source",
-        "Fixes by guessing, with no source",
-        "Does not re-check after fixing, or the fix introduces a new error",
-        "Changes correct content into wrong content",
-        "Leaves an unverified assumption as fact in the final version",
-        "Has no verification record, or no original AI output to compare against"
       ]
     }
   ]

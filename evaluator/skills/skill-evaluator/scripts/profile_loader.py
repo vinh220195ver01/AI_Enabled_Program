@@ -175,6 +175,7 @@ def main():
             shared = f"  (shared: {g['shared_from']} v{g['shared_version']})" if "shared_from" in g else ""
             print(f"  {g.get('id')} {g.get('name')}: {', '.join(ids)}{shared}")
         if args.out:
+            args.out.parent.mkdir(parents=True, exist_ok=True)
             args.out.write_text(json.dumps(resolved, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             print(f"Wrote {args.out}")
     return 1 if failed else 0

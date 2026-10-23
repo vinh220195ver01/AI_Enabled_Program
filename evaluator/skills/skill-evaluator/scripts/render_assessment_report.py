@@ -10,6 +10,12 @@ Inputs:
                     check that every evidence ref points at a file that exists)
   --out-dir         report/
 
+A plan with `scoring_model: weighted-pass-fail` is rendered by render_weighted() (see its
+docstring for the result and human file shapes): per competency, criterion verdicts from
+criterion_rules.py, group points (5 per group), competency score = A*0.2 + B*0.5 + C*0.3,
+pass at 3 for every competency plus a passing gate; the skill -> competency mapping and the
+conditions still waiting for a person are listed. The text below is the old points model.
+
 Scoring (the judge reports counts of errors, never points; this script does the maths):
   criterion points = max_points - penalty_per_error x errors, floored at 0
   a criterion marked na scores full max_points (the trainee is not penalised for a
@@ -147,6 +153,241 @@ def write_xlsx(path, title, subtitle, table):
         z.writestr("xl/worksheets/sheet1.xml", sheet)
 
 
+def _flag(r):
+    return r.get("met") if isinstance(r, dict) else r
+
+
+def _apply_human(results, decisions, label):
+    """Fill the conditions the judge left open (met null) from {position: bool}."""
+    out = []
+    for i, r in enumerate(results):
+        if _flag(r) is None and str(i) in decisions:
+            r = {**(r if isinstance(r, dict) else {}), "met": bool(decisions[str(i)]), "evidence": f"decided by a person ({label})"}
+        out.append(r)
+    return out
+
+
+def loc_lines(locs, root):
+    """One line per failure location: where to open the file, and what to look for."""
+    out = []
+    for lo in locs or []:
+        f = lo.get("file", "?")
+        path = str((root / f).resolve()) if root is not None else f
+        if "absent" in lo:
+            where = f"{path}" + (f" | sheet {lo['sheet']}" if lo.get("sheet") else "")
+            out.append(f"\n    MISSING in {where}: {lo['absent']}")
+        elif "sheet" in lo:
+            out.append(f"\n    EXCEL {path} | sheet \"{lo['sheet']}\" | cell {lo['cell']} | \"{lo.get('quote', '')}\"")
+        else:
+            out.append(f"\n    FILE {path} | line {lo.get('line', '?')} | \"{lo.get('quote', '')}\"")
+    return "".join(out)
+
+
+def render_weighted(a, plan, result, human):
+    """Report for a weighted-pass-fail plan: per competency, group points and a competency score.
+
+    result  = {"skills": [{"name", "competency", "reason"}],
+               "skill_results": {skill: {"A1": [cond, ...], ...}},          # group A, per skill
+               "competency_results": {competency: {"B1": [...], ..., "C4": [...]}},
+               "gate": {"verdict": "pass" | "fail" | "pending", "note": "..."}}
+      cond = true | false | {"met": true | false | null, "evidence": "..."}   (null = a person grades it)
+    human   = {"conditions": {"<competency>/<criterion>": {"<position>": true}},
+               "gate": {"verdict": "pass" | "fail", "note": "..."},
+               "skill_to_competency": {"<skill>": "<competency>"},          # trainer corrections
+               "mapping_reviewed": true}
+    """
+    import criterion_rules as cr
+
+    asm = plan["scope"]["assessment"]
+    root = a.submission_dir
+    sub = asm.get("sub_category")
+    profile = {"groups": asm["groups"], "scoring": asm["scoring"],
+               "criteria": [{**c, "pass_rule": c["effective_rule"]} for c in asm["criteria"]]}
+    by_id = {c["id"]: c for c in asm["criteria"]}
+    top = asm["scoring"]["group_points"]
+    notes = []
+
+    mapping = {}
+    for s in result.get("skills", []):
+        mapping[s["name"]] = {"competency": s["competency"], "reason": s.get("reason", ""), "corrected": False}
+    for skill, comp in human.get("skill_to_competency", {}).items():
+        if skill in mapping:
+            mapping[skill] = {**mapping[skill], "competency": comp, "corrected": True}
+    for skill, m in mapping.items():
+        if m["competency"] not in asm["competencies"]:
+            print(f"error: skill {skill!r} is mapped to {m['competency']!r}, not one of {asm['competencies']}", file=sys.stderr)
+            return 1
+    uncovered = [s for s in result.get("skill_results", {}) if s not in mapping]
+    if uncovered:
+        print(f"error: skill_results for skills not in `skills`: {uncovered}", file=sys.stderr)
+        return 1
+    a_ids = [c["id"] for c in asm["criteria"] if c["group"] == "A"]
+    rest_ids = [c["id"] for c in asm["criteria"] if c["group"] != "A"]
+
+    comps, any_pending = [], False
+    for comp in asm["competencies"]:
+        skills = [s for s, m in mapping.items() if m["competency"] == comp]
+        merged, skill_outcomes = {}, {}
+        for s in skills:
+            res = result.get("skill_results", {}).get(s)
+            if res is None:
+                print(f"error: no skill_results for skill {s!r}", file=sys.stderr)
+                return 1
+            res = {k: _apply_human(v, human.get("conditions", {}).get(f"{comp}/{s}/{k}", {}), f"{s}/{k}") for k, v in res.items()}
+            missing = [i for i in a_ids if i not in res]
+            if missing:
+                print(f"error: skill {s!r} has no results for {missing}", file=sys.stderr)
+                return 1
+            skill_outcomes[s] = cr.evaluate_all(profile, {i: res[i] for i in a_ids}, sub)
+        for i in a_ids:
+            outs = [skill_outcomes[s][i] for s in skills]
+            if not outs:
+                merged[i] = {"verdict": "fail", "score": 0.0, "met": 0, "total": 0, "pending": 0}
+                continue
+            scores = [o["score"] for o in outs]
+            merged[i] = {"verdict": "fail" if any(o["verdict"] == "fail" for o in outs)
+                         else "pending" if any(o["verdict"] == "pending" for o in outs) else "pass",
+                         "score": None if any(x is None for x in scores) else round(sum(scores) / len(scores), 4),
+                         "met": sum(o["met"] for o in outs), "total": sum(o["total"] for o in outs),
+                         "pending": sum(o["pending"] for o in outs)}
+        if not skills:
+            notes.append(f"{comp}: no submitted skill belongs to this competency, so group A scores 0 for it.")
+        raw = result.get("competency_results", {}).get(comp)
+        if raw is None:
+            print(f"error: no competency_results for {comp!r}", file=sys.stderr)
+            return 1
+        res = {k: _apply_human(v, human.get("conditions", {}).get(f"{comp}/{k}", {}), f"{comp}/{k}") for k, v in raw.items()}
+        missing = [i for i in rest_ids if i not in res]
+        if missing:
+            print(f"error: {comp} has no results for {missing}", file=sys.stderr)
+            return 1
+        outs = cr.evaluate_all(profile, {i: res[i] for i in rest_ids}, sub)
+        outcomes = {**merged, **outs}
+        sc = cr.score_groups(profile, outcomes)
+        any_pending |= sc["competency_score"] is None
+        comps.append({"id": comp, "skills": skills, "outcomes": outcomes, "score": sc,
+                      "unmet": {i: [(t, _flag(r), (r.get("evidence", "") if isinstance(r, dict) else ""), (r.get("locations", []) if isinstance(r, dict) else []))
+                                    for t, r in zip(by_id[i]["conditions"], res[i]) if _flag(r) is not True]
+                                for i in rest_ids},
+                      "skill_unmet": {s: {i: [(t, _flag(r), (r.get("evidence", "") if isinstance(r, dict) else ""), (r.get("locations", []) if isinstance(r, dict) else []))
+                                              for t, r in zip(by_id[i]["conditions"],
+                                                              _apply_human(result["skill_results"][s][i], {}, ""))
+                                              if _flag(r) is not True] for i in a_ids} for s in skills}})
+
+    gate = human.get("gate") or result.get("gate") or {"verdict": "pending", "note": "no gate result"}
+    gate_verdict = gate.get("verdict", "pending")
+    verdicts = [c["score"]["verdict"] for c in comps]
+    if "fail" in verdicts or gate_verdict == "fail":
+        verdict = "FAIL"
+    elif None in verdicts or gate_verdict != "pass":
+        verdict = "PENDING"
+    else:
+        verdict = "PASS"
+    mapping_reviewed = bool(human.get("mapping_reviewed"))
+    status = "final" if verdict != "PENDING" and mapping_reviewed else "provisional"
+    if not mapping_reviewed:
+        notes.append("Skill -> competency mapping is the judge's proposal; the trainer has not reviewed it yet "
+                     "(human `mapping_reviewed`).")
+    if gate_verdict == "pending":
+        notes.append("The AI Safety & Responsible Use gate has no verdict yet.")
+
+    report = {"scoring_model": "weighted-pass-fail", "status": status, "verdict": verdict,
+              "pass_threshold": asm["scoring"]["pass_threshold"], "gate": {"id": "SAFE", **gate},
+              "skill_to_competency": [{"skill": s, **m} for s, m in mapping.items()],
+              "mapping_reviewed": mapping_reviewed,
+              "competencies": [{"id": c["id"], "skills": c["skills"], "competency_score": c["score"]["competency_score"],
+                                "verdict": c["score"]["verdict"], "groups": c["score"]["groups"],
+                                "criteria": {i: {k: v for k, v in o.items()} for i, o in c["outcomes"].items()}}
+                               for c in comps],
+              "criteria_sha256": asm["criteria_sha256"], "notes": notes}
+    a.out_dir.mkdir(parents=True, exist_ok=True)
+    (a.out_dir / "assessment_report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    def fmt(x):
+        return "pending" if x is None else x
+    table = []
+    for c in comps:
+        for g in asm["groups"]:
+            ids = [i for i in (a_ids if g["id"] == "A" else rest_ids) if by_id[i]["group"] == g["id"]]
+            for i in ids:
+                o, crit = c["outcomes"][i], by_id[i]
+                if g["id"] == "A":
+                    ev = [f"- skill {s}: {t} -- {short(e, 300) or 'not met'}" + loc_lines(lo, root) for s in c["skills"]
+                          for t, m, e, lo in c["skill_unmet"][s][i]] or ([] if c["skills"] else ["- no skill in this competency"])
+                else:
+                    ev = [f"- {'PENDING person: ' if m is None else ''}{short(t, 70)} -- {short(e, 300) or 'not met'}" + loc_lines(lo, root)
+                          for t, m, e, lo in c["unmet"][i]]
+                table.append([(f"{g['id']} {g['name']}", S_CELL), (c["id"], S_CELL), (f"{i} {crit['name']}", S_CELL),
+                              (round(top / len(ids), 3), S_NUM), (fmt(None if o["score"] is None else round(o["score"] * top / len(ids), 3)), S_NUM),
+                              (f"{o['total'] - o['met'] - o['pending']}/{o['total']}", S_NUM),
+                              ("\n".join(ev) or "All conditions met", S_EVID),
+                              (o["verdict"].capitalize(), S_NUM)])
+            gp = c["score"]["groups"][g["id"]]
+            table.append([(f"{g['id']} {g['name']}", S_SUB), (c["id"], S_SUB), ("Group points (weight " + str(g["weight"]) + ")", S_SUB),
+                          (gp["max"], S_SUB), (fmt(gp["points"]), S_SUB), ("", S_SUB), ("", S_SUB), ("", S_SUB)])
+        table.append([("Competency", S_SUB), (c["id"], S_SUB), (f"Competency score (pass at {asm['scoring']['pass_threshold']})", S_SUB),
+                      (top, S_SUB), (fmt(c["score"]["competency_score"]), S_SUB), ("", S_SUB),
+                      (", ".join(c["skills"]) or "no skill", S_SUB), ((c["score"]["verdict"] or "pending").capitalize(), S_SUB)])
+    table.append([("GATE", S_SUB), ("SAFE", S_SUB), ("AI Safety & Responsible Use", S_SUB), ("", S_SUB), ("", S_SUB), ("", S_SUB),
+                  (short(gate.get("note", "")), S_SUB), (gate_verdict.capitalize(), S_SUB)])
+    table.append([("TOTAL", S_SUB), ("", S_SUB), (f"{verdict} ({status})", S_SUB), ("", S_SUB), ("", S_SUB), ("", S_SUB),
+                  ("", S_SUB), (verdict, S_SUB)])
+    title = f"Scoring Sheet - {plan['skill_name']}"
+    subtitle = (f"Status: {status}. Competency score = A*0.2 + B*0.5 + C*0.3 on a 0-{top} scale; pass at "
+                f"{asm['scoring']['pass_threshold']} for every competency and the gate passes.")
+    xlsx_path = a.out_dir / "assessment_scoring_sheet.xlsx"
+    try:
+        write_xlsx(xlsx_path, title, subtitle, table)
+    except PermissionError:  # the old sheet is open in Excel
+        xlsx_path = a.out_dir / "assessment_scoring_sheet.new.xlsx"
+        write_xlsx(xlsx_path, title, subtitle, table)
+        print(f"warning: assessment_scoring_sheet.xlsx is open elsewhere; wrote {xlsx_path.name} instead", file=sys.stderr)
+
+    def cellmd(t):
+        return str(t).replace("|", "\\|").replace("\n", "<br>")
+    md = [f"# Scoring Sheet - {plan['skill_name']}", "", f"**{verdict}** -- status: {status}", "",
+          "## Competency scores", "", "| Competency | A | B | C | Score | Verdict |", "|---|---|---|---|---|---|"]
+    for c in comps:
+        g = c["score"]["groups"]
+        md.append(f"| {c['id']} | " + " | ".join(str(fmt(g[k]['points'])) for k in "ABC") +
+                  f" | {fmt(c['score']['competency_score'])} | {(c['score']['verdict'] or 'pending')} |")
+    md += ["", f"Gate AI Safety & Responsible Use: **{gate_verdict}**" + (f" -- {gate['note']}" if gate.get("note") else ""),
+           "", "## Skill to competency mapping (trainer reviews)", "", "| Skill | Competency | Reason |", "|---|---|---|"]
+    md += [f"| {s} | {m['competency']}{' (trainer-corrected)' if m['corrected'] else ''} | {cellmd(m['reason'])} |"
+           for s, m in mapping.items()]
+    md += ["", "## Scoring sheet", "", "| " + " | ".join(HEADERS) + " |", "|" + "---|" * len(HEADERS)]
+    for row in table:
+        md.append("| " + " | ".join(cellmd(v) for v, _ in row) + " |")
+    md += ["", "## Failed conditions: where to look", ""]
+    any_fail = False
+    for c in comps:
+        for i in rest_ids + a_ids:
+            if i in a_ids:
+                items = [(f"skill {sk}", u) for sk in c["skills"] for u in c["skill_unmet"][sk][i]]
+            else:
+                items = [("", u) for u in c["unmet"][i]]
+            for who, (t, m, e, lo) in items:
+                if m is not False:
+                    continue
+                any_fail = True
+                md.append(f"**{c['id']} / {i} {by_id[i]['name']}** {who}: {t}")
+                md.append(f"- why: {e}")
+                for line in loc_lines(lo, root).split("\n"):
+                    if line.strip():
+                        md.append(f"- {line.strip()}")
+                md.append("")
+    if not any_fail:
+        md += ["No failed condition.", ""]
+    open_cond = [f"{c['id']}/{i}" for c in comps for i, o in c["outcomes"].items() if o["verdict"] == "pending"]
+    if open_cond:
+        md += ["", "## Waiting for a person", ""] + [f"- {k}: fill `human.conditions[\"{k}\"]` by condition position" for k in open_cond]
+    if notes:
+        md += ["", "## Notes"] + [f"- {n}" for n in notes]
+    (a.out_dir / "assessment_report.md").write_text("\n".join(md) + "\n", encoding="utf-8")
+    print(f"{verdict} status={status}; " + ", ".join(f"{c['id']}={fmt(c['score']['competency_score'])}" for c in comps))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--plan", required=True)
@@ -159,6 +400,8 @@ def main():
     plan, result = load(a.plan), load(a.result)
     human = load(a.human) if a.human else {}
     asm = plan["scope"]["assessment"]
+    if asm.get("scoring_model") == "weighted-pass-fail":
+        return render_weighted(a, plan, result, human)
     graded = result.get("criteria", {})
 
     missing = [c["id"] for c in asm["criteria"] if c["id"] not in graded]

@@ -24,11 +24,6 @@
       "pass_when_all": [
         "Folder name: lowercase letters, digits and hyphens only (regex ^[a-z0-9]+(-[a-z0-9]+)*$), at most 64 characters",
         "Exactly one file named exactly SKILL.md at the root of the skill folder"
-      ],
-      "fail_when_any": [
-        "The folder name has uppercase letters, spaces, underscores (_) or Vietnamese diacritics",
-        "The file is named skill.md, SKILL.MD or SKILL.md.txt",
-        "SKILL.md sits in a subfolder"
       ]
     },
     {
@@ -41,11 +36,6 @@
         "SKILL.md starts with --- on line 1, has a closing ---, and the YAML parses without error",
         "Has a name key whose value is IDENTICAL to the folder name (case-sensitive)",
         "Has a non-empty description of at most 1024 characters, containing no < or > characters"
-      ],
-      "fail_when_any": [
-        "The frontmatter is missing, or the closing --- is missing",
-        "name is \"Test Case Generation\" but the folder is test-case-generation",
-        "The frontmatter does not start on line 1"
       ]
     },
     {
@@ -61,14 +51,6 @@
         "SKILL.md has a heading named Process / Workflow / Steps / Quy trình",
         "Steps are numbered continuously from 1, with no skipped or repeated numbers, and at least 3 steps",
         "Each step starts with an action verb (Extract, Identify, Export…)"
-      ],
-      "fail_when_any": [
-        "Only says what the skill is (\"This skill generates test cases\")",
-        "The trigger clause is too generic (\"Use when testing\")",
-        "The trigger condition is only written in the SKILL.md body",
-        "The process is written as a paragraph, or as unnumbered \"-\" bullets",
-        "Numbers are skipped or repeated (e.g. 1, 2, 4)",
-        "The process only lives in a references file"
       ]
     },
     {
@@ -81,11 +63,6 @@
         "The skill folder (SKILL.md, references/, assets/, scripts/) contains no information hard-wired to a specific project or customer (project name, customer name, internal URL, personal machine path, account/password, real data, project business rules)",
         "Project-specific information comes in through the input (a placeholder such as {project_name}, or the skill says \"ask the user if missing\"), not written directly into the process",
         "Each piece of content has a single source (output template, checklist, severity list...); a change only needs editing in one place"
-      ],
-      "fail_when_any": [
-        "A project name, customer name, URL, path or login information is hard-coded in the skill",
-        "The skill only works for exactly one project (e.g. \"Check against the Login screen of app ABC\")",
-        "Several skills use the same content but each keeps its own copy"
       ]
     }
   ]

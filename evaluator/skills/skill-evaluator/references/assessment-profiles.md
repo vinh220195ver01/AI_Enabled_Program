@@ -2,7 +2,7 @@
 
 A profile is the seam for evaluating many trainees against **one fixed definition of "good"**. The course owner supplies two data files; the framework does the rest. Nothing in `SKILL.md`'s workflow changes per assessment, and no judge prompt has to be edited when criteria change.
 
-**Status:** both profiles have criteria only and neither can be run yet. `manual-qa` v0.10 replaced the whole v0.3 profile with the weighted structure from the `Intermediate_Manual` sheet (see "manual-qa profile v0.10" below). The judge, the scripts and the sections from "The two files" through "Scoring model" still describe the v0.3 points model, which no longer matches any profile. `build_plan_from_profile.py` rejects a profile whose `scoring_model` is not `deduction`. `auto-qa` v0.8 likewise replaced v0.1 with the sheet `Intermediate_auto` (see "auto-qa profile v0.8" at the end). Group A is shared by both profiles (see "Shared criteria"). A new area is a new folder under `profiles/` with the same two files, plus a judge agent if the existing one doesn't fit.
+**Status:** both profiles have criteria only and neither can be run yet. `manual-qa` v0.11 replaced the whole v0.3 profile with the weighted structure from the `Intermediate_Manual` sheet (see "manual-qa profile v0.11" below). The judge, the scripts and the sections from "The two files" through "Scoring model" still describe the v0.3 points model, which no longer matches any profile. `build_plan_from_profile.py` rejects a profile whose `scoring_model` is not `deduction`. `auto-qa` v0.17 likewise replaced v0.1 with the sheet `Intermediate_auto` (see "auto-qa profile v0.17" at the end). Group A is shared by both profiles (see "Shared criteria"). A new area is a new folder under `profiles/` with the same two files, plus a judge agent if the existing one doesn't fit.
 
 ## Shared criteria and course rules
 
@@ -34,16 +34,17 @@ The judge never decides a criterion's verdict. It reports, per condition, met or
 
 | Mode | Verdict | Score |
 |---|---|---|
-| `{"mode": "all"}` (current course rule) | pass only when every condition is met | 1 or 0 |
+| `{"mode": "proportional", "min_ratio": 0.8}` (current course rule) | every condition has equal weight; pass when met / total >= 80% (4 of 5, 5 of 6, 8 of 10 pass; 3 of 4, 4 of 6, 5 of 7 fail) | met / total, kept even when the verdict is fail |
+| `{"mode": "all"}` | pass only when every condition is met | 1 or 0 |
 | `{"mode": "at_least", "min_met": 5}` or `"min_ratio": 0.8` | pass when at least that many / that share of conditions are met | 1 or 0 |
-| `{"mode": "proportional", "min_ratio": 0.6}` | pass at or above the ratio | met / total (partial credit) |
 
 Optional on any mode: `conditions` (`pass_when_all`, the default, or `should_items`), `requires_pass_of` (criterion ids that must pass first, else fail with score 0), `text` (the rule in words).
 
 - Precedence: `criterion.pass_rule` > `group.pass_rule` > the profile's (from `course-rules.json`). Today only auto-qa B6 overrides: `at_least` 2 of its 3 `should_items`, `requires_pass_of` B3 and B5.
 - Counted conditions: the criterion's `pass_when_all`, then `by_sub_category[<sub>].pass_when_all` when it has variants (the sub-category being assessed must be given). Results are matched by position in that order.
-- To allow a partial pass course-wide, change `settings.pass_rule` in `_shared/course-rules.json`, e.g. to `{"mode": "at_least", "min_ratio": 0.8}`. To change one criterion or group only, give it its own `pass_rule`.
+- To change the course-wide pass line, change `settings.pass_rule` in `_shared/course-rules.json`, e.g. to `{"mode": "all"}` (every condition must be met). To change one criterion or group only, give it its own `pass_rule`.
 - The loader validates every rule (known mode, the right thresholds, existing `requires_pass_of` ids, a non-empty condition list). Show the effective rule of each criterion with `python scripts/criterion_rules.py profiles/manual-qa profiles/auto-qa`, or evaluate saved results with `--results r.json [--sub-category SCR]`.
+- Human-graded conditions: a criterion may list `human_conditions` (positions in its `pass_when_all`). The judge does not grade them and reports `{"met": null, "pending": "human"}`; the grader fills them in. While one is open the verdict is `pending` (score null), unless it is already decided, e.g. under mode `all` (or `proportional` once the 80% line can no longer be reached) another unmet condition already makes it a fail. A criterion that `requires_pass_of` a pending one is pending too. Today only auto-qa C4 has one: explaining the submitted code.
 - Pass rules decide a criterion's verdict and score only. How scores roll up is the course `scoring` setting (see "Scoring (course-wide)").
 
 ## Scoring (course-wide)
@@ -58,14 +59,25 @@ Optional on any mode: `conditions` (`pass_when_all`, the default, or `should_ite
 | `skill_to_competency` | the judge decides which competency each submitted skill belongs to, with a reason; the final report lists the mapping; the trainer reviews it |
 | `competency_catalog` | the course's 7 competencies (all "AI-assisted"): `requirements-analysis`, `test-design`, `test-case-generation`, `test-data-generation`, `automation-development`, `test-maintenance`, `defect-analysis-reporting`. A profile lists the ones its exam covers in `competencies`; the loader refuses an id that is not in the catalog |
 | group weights | on each group (`weight`): A 0.2, B 0.5, C 0.3 |
-| `criterion_score` | null: the number a pass/fail criterion counts as is undecided |
-| `pass_threshold` | null: the line that replaces "below 3" is undecided (the 1-5 scale was dropped) |
+| `group_points` | 5: each group A, B, C is worth 5 points, shared equally by its criteria (5 / n each) |
+| `criterion_score` | a criterion earns its share x (conditions met / total); each unmet condition deducts an equal slice |
+| `pass_threshold` | 3 (of 5): Competency Score = A\*0.2 + B\*0.5 + C\*0.3 with A, B, C in points; pass when >= 3 for every competency and the gate passes. |
 
-Also undecided: whether group A is scored per skill, and rounding. No script computes group or competency scores yet.
+`criterion_rules.score_groups()` computes group points and the competency score from `evaluate_all()` results; `python scripts/criterion_rules.py <profile> --results r.json` prints them when every criterion has results.
 
-## manual-qa profile v0.10 (criteria loaded, not yet runnable)
+Decided 2026-10-21: the pass line 3 of 5 with weights 0.2/0.5/0.3, "a criterion passes at 80% or more of its conditions met, fails below" (2026-10-23; before that "fail at 20% unmet", under which 4 of 5 failed), and a Fail criterion keeps its partial points. Still undecided: rounding, and M-11 (group A per skill). Until M-11 is answered the report scores group A per skill and averages each A criterion's score over the skills mapped to the competency (a competency with no skill gets A = 0).
 
-`profiles/manual-qa/criteria.json` (groups B and C; group A from `_shared/skill-standard.json`; `competencies`: requirements-analysis, test-design, test-case-generation, test-data-generation) holds the criteria loaded from the sheet `Intermediate_Manual` of `AI-enabled QA Program.xlsx`, with the Description and Pass/Fail text translated from Vietnamese. Profile and fragment files hold criteria and scoring only, with no record of the source workbook, its cells or its open items; a reload from a new workbook version replaces the content. `"scoring_model": "weighted-pass-fail"`:
+### Plan and report for weighted-pass-fail
+
+- `build_plan_from_profile.py <profile> --skill-name .. --hypothesis .. --out plan.json [--baseline b.json] [--sub-category X]` writes the resolved criteria (with each one's effective rule and counted conditions), competencies, scoring and gates into the plan, with sha256 of `criteria.json` and shared files. It refuses a profile with missing `competencies`, weights not adding to 1, a pass line above `group_points`, or a criterion with variants and no `--sub-category`.
+- `render_assessment_report.py --plan plan.json --result result.json [--human human.json] --out-dir report/` writes the scoring sheet (xlsx + md) and `assessment_report.json`. Result shape (the judge's output, T-01): `skills[{name, competency, reason}]`, `skill_results{skill: {A1: [cond..]}}`, `competency_results{competency: {B1: [cond..], .., C4: [..]}}`, `gate{verdict, note}`; `cond` is a bool or `{met, evidence}` (`met: null` = a person grades it). Human file: `conditions{"<competency>/<criterion>": {"<position>": bool}}` (A: `"<competency>/<skill>/A1"`), `gate`, `skill_to_competency` (trainer corrections), `mapping_reviewed`.
+- Every unmet condition carries `locations` (rule 3a of the judge): Excel `{file, sheet, cell, quote}`, text `{file, line, quote}` (quote verbatim), missing `{file, absent}`. `merge_judge_results.py --submission-dir` checks them against the real files; the report prints the absolute path, sheet and cell, or line and quote, and has a section "Failed conditions: where to look".
+- Old v0.3 results: `scripts/convert_v03_results.py` + `profiles/manual-qa/v03-conversion.json` (T-04). It converts what has an equivalent (A1-A4, A7, A8, C1-C4, C6, C7 and template errors of B2-B4), leaves the rest pending, and reports a low-high score range.
+- Overall verdict: FAIL if any competency scores below the line or the gate fails; PASS when all pass, the gate passes and nothing is pending; otherwise PENDING. Status is `final` only when the verdict is not PENDING and the trainer has reviewed the mapping.
+
+## manual-qa profile v0.11 (criteria loaded, not yet runnable)
+
+`profiles/manual-qa/criteria.json` (groups B and C; group A from `_shared/skill-standard.json`; `competencies`: requirements-analysis, test-design, test-case-generation, test-data-generation, defect-analysis-reporting) holds the criteria loaded from the sheet `Intermediate_Manual` of `AI-enabled QA Program.xlsx`, with the Description and Pass/Fail text translated from Vietnamese. Profile and fragment files hold criteria and scoring only, with no record of the source workbook, its cells or its open items; a reload from a new workbook version replaces the content. `"scoring_model": "weighted-pass-fail"`:
 
 | Group | Section | Weight | Criteria |
 |---|---|---|---|
@@ -74,10 +86,10 @@ Also undecided: whether group A is scored per skill, and rounding. No script com
 | C QA Output Quality | For Competence | 0.3 | C1 Accuracy, C2 Completeness & Coverage, C3 Usability & Format, C4 Human Validation & Improvement |
 | SAFE AI Safety & Responsible Use (`gates[]`) | For Course | 0 | mandatory pass/fail gate, conditions not defined yet |
 
-Each criterion has `description`, `pass_intro` + `pass_when_all[]` (the sheet's Pass conditions) and `fail_when_any[]` (its Fail conditions). The sheet's "AI Assessor Need to Check" column is not loaded: it is not scored, and grading uses only the Pass/Fail conditions (course decision). Every criterion follows the course `pass_rule` (see "Pass rules"): today it passes only when all its conditions hold, with no partial pass. Scoring follows the course setting (see "Scoring (course-wide)"); the profile file has no `scoring` of its own.
+Each criterion has `description`, `pass_intro` + `pass_when_all[]` (the sheet's Pass conditions) (the sheet's Fail conditions were dropped on 2026-10-23: only pass conditions are graded). The sheet's "AI Assessor Need to Check" column is not loaded: it is not scored, and grading uses only the Pass/Fail conditions (course decision). Every criterion follows the course `pass_rule` (see "Pass rules"): today it passes only when all its conditions hold, with no partial pass. Scoring follows the course setting (see "Scoring (course-wide)"); the profile file has no `scoring` of its own.
 
 What blocks a runnable pipeline:
-- the scoring setting is incomplete: the number a pass/fail criterion counts as and the pass line that replaces "below 3" are undecided, and so is whether the manual exam's bug report is graded (`defect-analysis-reporting` is not among manual-qa's `competencies`)
+- the scoring setting is incomplete: the number a pass/fail criterion counts as and the pass line that replaces "below 3" are undecided
 - the safety gate has no pass/fail conditions
 - C1 Accuracy: the description is about factual accuracy, but its Pass/Fail cells check clarification questions against the answer key's ambiguous points
 - the answer key keeps the v0.3 shape (course decision): `profiles/manual-qa/baseline.template.json` is unchanged, with ACs, ambiguities, edge cases, planted bugs and `severity_scale`. Current criteria use the ambiguities (C1) and the ACs in scope (C2). The planted bugs and the `ambiguity_with_tr_pct` / `bug_found_pct` thresholds are kept for criteria that v0.4 dropped on purpose and will add back later. `import_baseline_xlsx.py` still writes this shape, but its `not_assessed` list names v0.3 criterion ids
@@ -180,15 +192,18 @@ This sheet has no weight or skill/output 1-5 columns, because the manual-QA rubr
 - It does not match anything by string comparison. Whether a question covers an ambiguity, or a bug matches a BUG-xx, is a semantic judgment by the judge with a quoted `where`/`quote` for every error.
 - Do not append post-hoc criteria to a generated plan. Anything noticed later goes in `exploratory_assertions[]`, or in `grading_notes` for the next profile version.
 
-## auto-qa profile v0.8 (criteria loaded, not yet runnable)
+## auto-qa profile v0.17 (criteria loaded, not yet runnable)
 
 `profiles/auto-qa/criteria.json` holds the criteria loaded from the sheet `Intermediate_auto` of `AI-enabled QA Program - automation side.xlsx`. It replaced the whole v0.1 profile, which held the maturity-levels model from `QA_AI_Skills_Assessment_Rubric_AUTO.xlsx`. It has the same groups, weights, gate structure and course scoring as manual-qa (`"scoring_model": "weighted-pass-fail"`). Group A is the shared `_shared/skill-standard.json`, identical to manual-qa; this sheet's own A1-A4 text is not used. B and C differ:
 
 | Item | Content |
 |---|---|
-| Group B (B1-B5) | common conditions plus `by_sub_category` for the 7 sub-categories `TCD`, `FWG`, `SCR`, `REV`, `EXE`, `RES`, `DEF`: deliverables (B1), knowledge files (B2), trigger/assets/references/no project data (B3), `self_check` (B4), `trigger`/`handoff`/`delivered_to` (B5). B4 has a non-scoring `advisory_note` |
+| Group B (B1-B5) | common conditions plus `by_sub_category` for the 7 sub-categories `TCD`, `FWG`, `SCR`, `REV`, `EXE`, `RES`, `DEF`: deliverables (B1), knowledge files (B2), trigger/assets/references/no project data (B3), `self_check` (B4), `trigger`/`handoff`/`delivered_to` (B5). B4 has a non-scoring `advisory_note` . B2 `clarifications`: the real application is explored with Playwright CLI, using only test accounts and test data of a test environment |
 | B6 | `should_items[]` plus `pass_rule`: B3 and B5 must pass, and at least 2 of the 3 items must hold |
-| Group C (C1-C4) | written for Playwright scripts (runs, locators, POM, rerun evidence) |
-| Gate `SAFE` | defined: only approved tools, no confidential data, AI output validated; a single violation fails |
+| Group C (C1-C4) | written for Playwright scripts (runs, locators, POM, rerun evidence). `clarifications` (course decisions): C1 locators: getByRole / getByTestId first, other user-facing locators (getByLabel, getByText, getByPlaceholder, getByAltText, getByTitle) accepted when reasonable and chosen by priority, taking each built-in locator's performance into account, CSS or XPath fails except XPath where built-in locators cannot target the element well (that XPath must be clean; CSS selectors have no exception); "serious errors" (C1) and "important AI errors" (C4) are exactly the ones in their parentheses; "minimal editing" (C3) means a short README / run guide. C4 `human_conditions`: explaining the submitted code is graded by the human grader |
+| Gate `SAFE` | defined: only approved tools, no confidential data, AI output validated; a single violation fails. `clarifications`: "validating AI output" here means checking it for confidential/sensitive data only; using AI output without running, reviewing or refining it is graded by C4 and does not fail the gate; exploring the application through Playwright CLI with real (non-test) accounts or real data is a violation |
+| `playwright-assessment.json` | the company's Playwright Assessment Level 1, the reference for grading the output of automation scripts (sub-category SCR); linked from group C as `output_reference`. 4 sections, 17 items: Interface (locators, page structure), Scripting and Debugging, Automation Test design, Configuration. Each item has a weight and a rating Poor 1 / Need to improve 2 / Meet 3 / Very Good 4 / Excellent 5; a section is Qualified at a weighted average of 3 or more; a comment is required below Meet. How it combines with C1-C4 and with the pass/fail model is undecided |
+| `tech_stack` | Playwright + TypeScript, fixed by the course; no other stack is used |
+| `evidence_package` | what a submission must include, unchanged from the earlier auto rubric: skills folder; full, unedited transcripts with the skill invocation; output files; run logs (`tsc`, lint, `npx playwright test`, CI/scheduler logs, test reports); git history / merge request / review records. Missing evidence means the condition fails; screenshots or pasted text without a transcript do not count |
 
-Like manual-qa, it is blocked on the undecided parts of the course scoring. It has no answer key, judge or scripts yet, and `build_plan_from_profile.py` rejects it.
+Like manual-qa, it is blocked on the undecided parts of the course scoring. Auto assessments have no answer key (course decision; `answer_key.exists` is false), so auto-qa has no `baseline.template.json`. It has no judge or scripts yet, and `build_plan_from_profile.py` rejects it.

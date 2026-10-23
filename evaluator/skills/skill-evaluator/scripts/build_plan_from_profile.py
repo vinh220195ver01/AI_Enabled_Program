@@ -4,7 +4,15 @@ Turns a profile's criteria (profiles/<name>/criteria.json) plus ONE assessment's
 (--baseline PATH, different for every exam) into the pre-registered evals/eval_plan.json
 (SKILL.md Step 1).
 
-Scoring model of a profile: every criterion is `deduction` type -- it has
+Two scoring models are supported:
+
+`weighted-pass-fail` (manual-qa v0.4+, auto-qa): criteria are lists of conditions, scored by
+criterion_rules.py (course default: deduction, fail at 20% unmet) and rolled up per
+competency by group points (5 per group) and group weights. The plan records the resolved
+criteria, scoring settings, competencies and gates. --baseline is optional; --sub-category is
+required when a criterion has sub-category conditions.
+
+`deduction` (the old v0.3 points model): every criterion is `deduction` type -- it has
 max_points and penalty_per_error; its score is max_points minus penalty x errors,
 floored at 0. Criteria belong to groups; the total is the sum of all criteria
 and the assessment passes at or above `pass_threshold`.
@@ -36,6 +44,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from criterion_rules import conditions_for, rule_for
 from profile_loader import ProfileError, load_profile
 
 REQUIRED_THRESHOLDS = {"ambiguity_found_pct", "ambiguity_with_tr_pct", "bug_found_pct"}
@@ -138,6 +147,110 @@ def sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def validate_weighted(profile, sub_category):
+    problems = [f"criteria.json: unfilled TODO at {p}" for p in walk_todos(profile)]
+    groups = {g["id"]: g for g in profile.get("groups", [])}
+    problems += dup_ids(profile.get("groups", []), "criteria.json groups")
+    problems += dup_ids(profile.get("criteria", []), "criteria.json criteria")
+    scoring = profile.get("scoring", {})
+    for key in ("group_points", "pass_threshold"):
+        if not isinstance(scoring.get(key), (int, float)) or scoring[key] <= 0:
+            problems.append(f"scoring.{key} must be a positive number (got {scoring.get(key)!r})")
+    if isinstance(scoring.get("group_points"), (int, float)) and isinstance(scoring.get("pass_threshold"), (int, float)) \
+            and scoring["pass_threshold"] > scoring["group_points"]:
+        problems.append("scoring.pass_threshold is above group_points: nobody could pass")
+    if abs(sum(g.get("weight", 0) for g in groups.values()) - 1) > 1e-9:
+        problems.append("group weights must add up to 1")
+    if not profile.get("competencies"):
+        problems.append("profile lists no `competencies`; the report scores per competency (auto-qa still needs them: AU-10)")
+    for c in profile.get("criteria", []):
+        if c.get("group") not in groups:
+            problems.append(f"{c.get('id')}: group {c.get('group')!r} is not declared")
+            continue
+        rule, _ = rule_for(profile, c)
+        try:
+            if not conditions_for(c, rule, sub_category):
+                problems.append(f"{c['id']}: no conditions to count")
+        except ValueError as e:
+            problems.append(str(e))
+    for gid in groups:
+        if not any(c.get("group") == gid for c in profile.get("criteria", [])):
+            problems.append(f"group {gid} has no criteria")
+    return problems
+
+
+def build_weighted(args, profile, sources):
+    baseline = None
+    if args.baseline:
+        baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
+        if baseline.get("profile") != args.profile_dir.name:
+            print(f"build_plan_from_profile: baseline.json profile is {baseline.get('profile')!r}, expected "
+                  f"{args.profile_dir.name!r}, nothing written")
+            return 1
+    problems = validate_weighted(profile, args.sub_category)
+    if problems:
+        print(f"build_plan_from_profile: {len(problems)} problem(s), nothing written:\n")
+        for p in problems:
+            print(f"  - {p}")
+        return 1
+    scoring = profile["scoring"]
+    criteria = []
+    for c in profile["criteria"]:
+        rule, origin = rule_for(profile, c)
+        criteria.append({**c, "effective_rule": rule, "rule_origin": origin,
+                         "conditions": conditions_for(c, rule, args.sub_category)})
+    plan = {
+        "skill_name": args.skill_name,
+        "skill_version": args.skill_version,
+        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "hypothesis": args.hypothesis,
+        "scope": {
+            "layers": ["L0", "L1"] + (["L2", "L3"] if args.has_refinement else []),
+            "has_refinement_step": args.has_refinement,
+            "refinement_mechanism": "trainee-submitted refined version" if args.has_refinement else None,
+            "primary_axes": ["correctness"],
+            "n_repeats": 1,
+            "assessment": {
+                "scoring_model": "weighted-pass-fail",
+                "profile": args.profile_dir.name,
+                "criteria_version": profile.get("version"),
+                "criteria_sha256": sha256(args.profile_dir / "criteria.json"),
+                "shared_sources": sources[1:],
+                "baseline_sha256": sha256(args.baseline) if baseline else None,
+                "baseline_version": baseline.get("version") if baseline else None,
+                "sub_category": args.sub_category,
+                "competencies": profile["competencies"],
+                "competency_catalog": profile.get("competency_catalog", []),
+                "skill_to_competency": scoring.get("skill_to_competency"),
+                "scoring": {k: scoring[k] for k in ("group_points", "pass_threshold", "group_score")},
+                "groups": profile["groups"],
+                "gates": profile.get("gates", []),
+                "criteria": criteria,
+            },
+        },
+        "baseline": {"type": "assessment_baseline",
+                     "reference": f"{args.baseline} assessment {baseline.get('assessment_id')} v{baseline.get('version')}"
+                     if baseline else "none"},
+        "evals": [{
+            "id": 1,
+            "name": baseline.get("assessment_id", args.skill_name) if baseline else args.skill_name,
+            "prompt": f"See requirement source: {baseline['requirement_source']}" if baseline else "See the exam brief",
+            "files": [baseline["requirement_source"]] if baseline and baseline.get("requirement_source") else [],
+            "assertions": [{"id": c["id"], "text": f"{c['name']}: {c['description']}", "pre_registered": True}
+                           for c in profile["criteria"]],
+            "exploratory_assertions": [],
+        }],
+    }
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(plan, indent=2, ensure_ascii=False), encoding="utf-8")
+    gate_open = [g["id"] for g in profile.get("gates", []) if not g.get("pass_when_all")]
+    print(f"Wrote {args.out}: {len(criteria)} criteria, {len(profile['competencies'])} competencies, "
+          f"{scoring['group_points']} points per group, pass at {scoring['pass_threshold']}")
+    if gate_open:
+        print(f"  gate {gate_open} has no conditions yet: its verdict will come from a person")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("profile_dir", type=Path)
@@ -146,7 +259,9 @@ def main():
     ap.add_argument("--hypothesis", required=True)
     ap.add_argument("--has-refinement", action="store_true",
                     help="trainee submitted a refined version (real L2)")
-    ap.add_argument("--baseline", type=Path, required=True, help="this assessment's answer key (baseline.json)")
+    ap.add_argument("--baseline", type=Path, help="this assessment's answer key (baseline.json); required for the "
+                    "deduction model, optional for weighted-pass-fail")
+    ap.add_argument("--sub-category", help="sub-category being assessed (criteria with sub-category conditions)")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
 
@@ -159,6 +274,10 @@ def main():
         for p in e.problems:
             print(f"  - {p}")
         return 1
+    if criteria.get("scoring_model") == "weighted-pass-fail":
+        return build_weighted(args, criteria, sources)
+    if bpath is None:
+        ap.error("--baseline is required for the deduction model")
     baseline = json.loads(bpath.read_text(encoding="utf-8"))
 
     problems = validate(criteria, baseline)
