@@ -1,6 +1,15 @@
 # AI Enabled Program
 
-Playwright coverage for the project's manual test cases.
+Playwright automation for multiple AUTs (Applications Under Test). Keep each AUT's manual cases and automation assets in its own domain folder so a domain-specific URL, locator, or test data never becomes shared infrastructure.
+
+Current AUTs:
+
+| AUT | Manual cases | Automation |
+|---|---|---|
+| Playwright Docs | `manual-test-cases/playwright-docs/` | `tests/playwright-docs/` |
+| ACTP1 Clothes Shop | `manual-test-cases/actp1/` | `tests/actp1/` (automation not started) |
+
+Add a new AUT by creating matching `manual-test-cases/<aut-name>/` and `tests/<aut-name>/` directories. Put specs under `e2e/`, page objects under `pages/`, and business actions under `actions/`. The root Playwright config discovers specs across AUTs and contains only shared browser/runtime settings.
 
 ## QA skills
 
@@ -27,18 +36,18 @@ npm run qa:full       # preflight plus all existing automated tests
 npm run qa:coverage   # verify every manual case has an automated spec
 ```
 
-The current reset state has no automated TC specs. The full suite uses Playwright's pass-with-no-tests mode so the lifecycle remains runnable; `qa:coverage` still fails until every manual case has a matching spec.
+The full suite uses Playwright's pass-with-no-tests mode so the lifecycle remains runnable when an AUT has no specs. `qa:coverage` checks that each manual case has a matching spec under the same AUT.
 
 Run a focused or complete local suite with `automation-script-generator`'s `run-local-playwright.mjs` script (also used by `automation-debugger` to reproduce/verify a fix):
 
 ```bash
-node .cursor/skills/automation-script-generator/scripts/run-local-playwright.mjs tests/e2e/tc02.spec.ts
+node .cursor/skills/automation-script-generator/scripts/run-local-playwright.mjs tests/playwright-docs/e2e/tc02.spec.ts
 ```
 
 Once local tests pass, `git-workflow` branches and commits, then `github-pr` pushes, opens the PR, and watches checks:
 
 ```bash
-npm run qa:branch -- --branch test/tc02-<slug> --message "test: cover TC02 with Playwright" --file tests/e2e/tc02.spec.ts
+npm run qa:branch -- --branch test/tc02-<slug> --message "test: cover TC02 with Playwright" --file tests/playwright-docs/e2e/tc02.spec.ts
 git push -u origin test/tc02-<slug>
 npm run qa:pr -- --branch test/tc02-<slug> --base develop --title "test: cover TC02 with Playwright" --body-file pr-body.md
 npm run qa:pr:watch

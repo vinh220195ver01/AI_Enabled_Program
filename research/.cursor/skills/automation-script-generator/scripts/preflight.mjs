@@ -25,20 +25,36 @@ if (existsSync(packageJsonPath)) {
   }
 }
 
-const specDir = resolve(cwd, "tests/e2e");
 if (allCases) {
   const manualCaseDir = resolve(cwd, "manual-test-cases");
   if (!existsSync(manualCaseDir)) {
     failures.push("manual-test-cases directory is missing");
   } else {
-    const manualCases = readdirSync(manualCaseDir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() || entry.isFile())
-      .map((entry) => entry.name.match(/^TC\d+/i)?.[0]?.toUpperCase())
-      .filter(Boolean);
-    for (const caseId of [...new Set(manualCases)].sort()) {
-      const slug = caseId.toLowerCase();
-      if (!existsSync(resolve(specDir, `${slug}.spec.ts`))) {
-        failures.push(`${caseId} has no matching tests/e2e/${slug}.spec.ts`);
+    const autSuites = readdirSync(manualCaseDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+    if (autSuites.length === 0) failures.push("manual-test-cases has no AUT-specific directories");
+
+    for (const aut of autSuites) {
+      const autManualCaseDir = resolve(manualCaseDir, aut);
+      const manualCases = new Set();
+      for (const entry of readdirSync(autManualCaseDir, { withFileTypes: true })) {
+        const caseIds = entry.name.match(/TC(?:_[A-Z0-9]+)*_\d+|TC\d+/gi) || [];
+        for (const caseId of caseIds) manualCases.add(caseId.toUpperCase());
+        if (entry.isFile()) {
+          const contents = readFileSync(resolve(autManualCaseDir, entry.name), "utf8");
+          for (const caseId of contents.match(/TC(?:_[A-Z0-9]+)*_\d+|TC\d+/gi) || []) {
+            manualCases.add(caseId.toUpperCase());
+          }
+        }
+      }
+
+      const specDir = resolve(cwd, "tests", aut, "e2e");
+      for (const caseId of [...manualCases].sort()) {
+        const slug = caseId.toLowerCase();
+        if (!existsSync(resolve(specDir, `${slug}.spec.ts`))) {
+          failures.push(`${caseId} has no matching tests/${aut}/e2e/${slug}.spec.ts`);
+        }
       }
     }
   }

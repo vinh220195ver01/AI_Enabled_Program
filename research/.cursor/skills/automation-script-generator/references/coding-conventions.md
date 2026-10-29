@@ -6,11 +6,14 @@ Loaded by `SKILL.md` step 1. These are fallback defaults — an existing, differ
 
 ```
 tests/
-├── e2e/            # one .spec.ts per test case, named <case-id-slug>.spec.ts
-├── pages/          # one page object per screen/component, PascalCase class, matching file name
-├── actions/         # Business Action functions, grouped by domain (auth.ts, checkout.ts, ...)
-└── fixtures/        # Playwright fixtures (custom test() extensions), only if the project already uses fixtures
+├── <aut-name>/
+│   ├── e2e/         # one .spec.ts per test case, named <case-id-slug>.spec.ts
+│   ├── pages/       # AUT-specific page objects
+│   └── actions/     # AUT-specific Business Action functions, grouped by feature
+└── shared/          # cross-AUT helpers/fixtures only when genuinely reusable
 ```
+
+Keep each AUT's specs, page objects, actions, and configuration together. Do not put an AUT URL, locator, test data, or assertion in `tests/shared/` or the root Playwright config. Shared code must not depend on one AUT.
 
 ## Spec file conventions
 
@@ -25,7 +28,7 @@ tests/
 
 ## Business action file conventions
 
-- Group by domain, not by test case — `actions/auth.ts` holds `login`, `logout`; not `actions/tc001.ts`.
+- Group by AUT, then by feature — `tests/shop/actions/auth.ts` holds `login`, `logout`; not `tests/shop/actions/tc001.ts`.
 - Export named functions, not a class with static methods, unless the project already uses classes for actions (check existing files first).
 - A business action receives a `Page` (or the project's existing fixture type) as its first parameter, per `references/page-object-pattern.md`.
 

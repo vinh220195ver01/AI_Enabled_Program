@@ -35,7 +35,7 @@ node <skill-path>/scripts/sync-and-branch.mjs \
   --branch test/tc001-search-product \
   --base develop \
   --message "test: cover TC001 with Playwright" \
-  --file tests/e2e/tc001.spec.ts --file tests/pages/product-page.ts
+  --file tests/<aut-name>/e2e/tc001.spec.ts --file tests/<aut-name>/pages/product-page.ts
 ```
 
 It resolves the base branch if `--base` is omitted, refuses to proceed if the branch name already exists or the working tree has changes outside `--file`, and stops before pushing (pushing is `github-pr`'s trigger, not this skill's) — the final step it prints is the exact push command to hand off.

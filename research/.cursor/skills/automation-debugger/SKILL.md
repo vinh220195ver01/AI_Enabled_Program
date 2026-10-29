@@ -32,7 +32,7 @@ Turns a red test into a classified, root-caused, and (where appropriate) fixed o
 
 ```json
 {
-  "spec": "tests/e2e/tc001.spec.ts",
+  "spec": "tests/<aut-name>/e2e/tc001.spec.ts",
   "classification": "locator | timeout | test-data | environment | application-defect | automation-defect | flaky",
   "rootCause": "...",
   "fixApplied": true,

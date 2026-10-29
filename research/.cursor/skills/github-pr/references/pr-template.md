@@ -8,7 +8,7 @@ Loaded by `SKILL.md` step 2, before drafting the PR body.
 - Changes: <N automation specs, M business actions, page objects touched — one line each, not a raw file list>
 
 ## Local results
-- Command: <exact command run, e.g. `npx playwright test tests/e2e/tc001.spec.ts`>
+- Command: <exact command run, e.g. `npx playwright test tests/<aut-name>/e2e/tc001.spec.ts`>
 - Result: <passed/failed, N/N>
 
 ## Product code changes
